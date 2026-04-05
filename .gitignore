@@ -1,0 +1,39 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+instance/
+.pytest_cache/
+
+# React/Frontend
+dist/
+dist-ssr/
+*.local
+.parcel-cache/
+.eslintcache
+.cache/
+
+# System/IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Kiosk State (Sensitive/Local)
+kiosk_state.json
+temp_prints/
+logs/
+
+# Supabase Local
+.supabase/

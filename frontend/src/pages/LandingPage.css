@@ -1,0 +1,162 @@
+/* Color Palette:
+   Navy Blue: #0B192C
+   Light Blue: #00B4D8
+   White: #FFFFFF
+*/
+
+.landing-container {
+  min-height: 100vh;
+  background-color: #0B192C; /* Navy Blue Background */
+  color: #FFFFFF;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  padding: 20px 50px;
+  background-color: rgba(11, 25, 44, 0.9);
+  border-bottom: 1px solid rgba(0, 180, 216, 0.2);
+}
+
+.logo {
+  height: 60px;
+  width: auto;
+  margin-right: 15px;
+  border-radius: 50%; /* Optional: agar logo square hai toh circle kar dega */
+  background-color: white; /* Logo visibility ke liye */
+  padding: 5px;
+}
+
+.brand-name {
+  font-size: 24px;
+  font-weight: bold;
+  color: #00B4D8; /* Light Blue */
+  letter-spacing: 1px;
+}
+
+.hero-section {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10%;
+  gap: 50px;
+}
+
+.hero-content {
+  flex: 1;
+}
+
+.headline {
+  font-size: 48px;
+  font-weight: 800;
+  margin-bottom: 20px;
+  line-height: 1.2;
+}
+
+.sub-headline {
+  font-size: 18px;
+  color: #A0B2C6;
+  margin-bottom: 40px;
+  line-height: 1.6;
+  max-width: 80%;
+}
+
+.get-started-btn {
+  background-color: #00B4D8;
+  color: #0B192C;
+  border: none;
+  padding: 15px 40px;
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 180, 216, 0.4);
+}
+
+.get-started-btn:hover {
+  background-color: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.3);
+}
+
+/* Slider Section */
+.slider-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.slide-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 180, 216, 0.3);
+  backdrop-filter: blur(10px);
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+  transition: all 0.5s ease-in-out;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.slide-icon {
+  font-size: 60px;
+  margin-bottom: 20px;
+}
+
+.slide-title {
+  font-size: 22px;
+  color: #00B4D8;
+  margin-bottom: 15px;
+}
+
+.slide-desc {
+  font-size: 16px;
+  color: #E0E0E0;
+  margin-bottom: 30px;
+  min-height: 70px; /* Taki text change hone par card height na hile */
+}
+
+.dots-container {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.dot.active {
+  background-color: #00B4D8;
+  transform: scale(1.2);
+}
+
+/* Smooth keyframe animation jab slide change ho */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .hero-section {
+    flex-direction: column;
+    text-align: center;
+    padding: 40px 20px;
+  }
+  
+  .sub-headline {
+    max-width: 100%;
+    margin: 0 auto 30px auto;
+  }
+}

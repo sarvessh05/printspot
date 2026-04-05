@@ -1,0 +1,19 @@
+ 
+  @tailwind base;
+@tailwind components;
+@tailwind utilities;
+ /* Poori body ko lock kar do taaki left-right na hile */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  touch-action: manipulation; /* Mobile buttons ko fast banata hai */
+  -webkit-tap-highlight-color: transparent; /* Tap karne par blue box nahi aayega */
+}
+
+/* Screen ke size ke hisaab se font size thoda adjust ho jaye */
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f8f9fa; /* Light background for premium feel */
+}
