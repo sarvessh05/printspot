@@ -15,7 +15,7 @@ const Dashboard = () => {
   // 🔒 Security Login
   const handleLogin = (e) => {
     e.preventDefault();
-    if (password === "Sahil@123") {
+    if (password === import.meta.env.VITE_ADMIN_PASSWORD) {
       setIsAuthenticated(true);
       fetchDashboardData();
     } else {
