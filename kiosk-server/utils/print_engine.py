@@ -19,6 +19,11 @@ async def print_pdf(file_path: Path, options: Dict) -> bool:
     """
     logger.info(f"📄 Preparing print job: {file_path}")
     
+    if settings.MOCK_PRINTER:
+        logger.info(f"🎭 [MOCK PRINTER] Simulating print for: {file_path}")
+        await asyncio.sleep(2) # Simulate mechanical movement
+        return True
+    
     if not file_path.exists():
         logger.error(f"❌ File not found for printing: {file_path}")
         return False

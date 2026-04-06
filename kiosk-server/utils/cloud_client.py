@@ -15,7 +15,7 @@ class CloudClient:
         self.supabase_url = settings.SUPABASE_URL
         self.supabase_key = settings.SUPABASE_KEY
         self.kiosk_id = settings.KIOSK_ID
-        self.kiosk_token = settings.VITE_KIOSK_TOKEN
+        self.kiosk_token = settings.KIOSK_TOKEN
 
     async def report_health(self, hardware_status: str = "NORMAL"):
         """
@@ -129,7 +129,11 @@ class CloudClient:
             ec2_url = f"{settings.ADMIN_BACKEND_URL}/api/kiosk/revert"
             try:
                 async with httpx.AsyncClient(timeout=10) as client:
-                    await client.post(ec2_url, json={"db_id": db_id})
+                    await client.post(ec2_url, json={
+                        "db_id": db_id,
+                        "kiosk_id": self.kiosk_id,
+                        "kiosk_token": self.kiosk_token
+                    })
                     logger.info(f"✅ EC2 OTP Reverted for job {db_id}")
             except Exception as e:
                  logger.debug(f"EC2 Revert failed: {e}")

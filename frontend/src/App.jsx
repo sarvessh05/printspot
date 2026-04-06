@@ -6,11 +6,7 @@ import LandingPage from './pages/LandingPage';
 import UploadPage from './pages/UploadPage'; // 👈 YE IMPORT MISSING THA!
 import ReviewPage from './pages/ReviewPage';
 import SuccessPage from './pages/SuccessPage';
-  
-import Dashboard from './pages/Dashboard';
- 
-
- 
+import KioskPage from './pages/KioskPage';
 
 function App() {
   return (
@@ -19,12 +15,10 @@ function App() {
         <Routes>
           {/* Main Website Flow (Mobile users ke liye) */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/upload" element={<UploadPage />} /> {/* 👈 YE RAASTA MISSING THA! */}
+          <Route path="/upload" element={<UploadPage />} />
           <Route path="/review" element={<ReviewPage />} />
           <Route path="/success" element={<SuccessPage />} />
-           
-           <Route path="/admin" element={<Dashboard />} />
-        
+          <Route path="/kiosk" element={<KioskPage />} />
         </Routes>
       </div>
     </Router>

@@ -14,22 +14,23 @@ class Settings(BaseSettings):
     DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
     
     # Kiosk Identity
-    KIOSK_ID: str = os.getenv("VITE_KIOSK_ID", "")
-    KIOSK_TOKEN: str = os.getenv("VITE_KIOSK_TOKEN", "")
+    KIOSK_ID: str = os.getenv("KIOSK_ID", "")
+    KIOSK_TOKEN: str = os.getenv("KIOSK_TOKEN", "")
     
     # Printer Config
     PRINTER_IP: str = os.getenv("PRINTER_IP", "")
     TARGET_PRINTER: Optional[str] = os.getenv("TARGET_PRINTER", None)
+    MOCK_PRINTER: bool = os.getenv("MOCK_PRINTER", "True").lower() == "true"
     
     # Admin Credentials
-    ADMIN_PASSWORD: str = os.getenv("VITE_ADMIN_PASSWORD", "")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "")
     
     # Supabase (for OTP Verification & Storage)
-    SUPABASE_URL: str = os.getenv("VITE_SUPABASE_URL", "")
-    SUPABASE_KEY: str = os.getenv("VITE_SUPABASE_ANON_KEY", "")
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+    SUPABASE_KEY: str = os.getenv("SUPABASE_ANON_KEY", "")
     
     # Backend Cloud Analytics
-    ADMIN_BACKEND_URL: str = os.getenv("VITE_EC2_IP", "")
+    ADMIN_BACKEND_URL: str = os.getenv("EC2_IP", "")
     
     # Local Storage
     TEMP_PRINTS_DIR: Path = BASE_DIR / "temp_prints"

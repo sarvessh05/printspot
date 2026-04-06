@@ -4,6 +4,12 @@ from config import settings
 import time
 import uvicorn
 
+from routes.kiosk_reporting import router as kiosk_reporting_router
+from routes.analytics import router as analytics_router
+from routes.order_creation import router as order_creation_router
+from routes.settings import router as settings_router
+from routes.payments import router as payments_router
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
@@ -19,6 +25,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register Routers
+app.include_router(kiosk_reporting_router)
+app.include_router(analytics_router)
+app.include_router(order_creation_router)
+app.include_router(settings_router)
+app.include_router(payments_router)
+
 @app.get("/")
 @app.get("/health")
 async def health_check():
@@ -29,17 +42,7 @@ async def health_check():
         "service": settings.PROJECT_NAME
     }
 
-# Mocked Routes for initial project setup ---------------------------------
-
-@app.get("/api/v1/kiosks")
-async def list_all_kiosks():
-    """Will fetch live heartbeats from Supabase."""
-    return [
-        {"kiosk_id": "KIOSK-001", "status": "ONLINE", "location": "Pune Camp", "last_ping": time.time()},
-        {"kiosk_id": "KIOSK-002", "status": "OFFLINE", "location": "Mumbai Metro", "last_ping": time.time() - 3600}
-    ]
-
-# ------------------------------------------------------------------------
+# Cleaned up mocks for Phase 7 implementation
 
 if __name__ == "__main__":
     print(f"🚀 [CLOUD ADMIN] Starting on port {settings.PORT}...")
