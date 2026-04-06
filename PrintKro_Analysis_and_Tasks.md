@@ -213,82 +213,22 @@ Time-series health snapshots sent by each kiosk.
   - Catch-all route → `dist/index.html`
   - Start on port 5000
 
-- [x] **3.5** Create `kiosk-server/run_server.bat`:
-  ```bat
-  @echo off
-  uvicorn server:app --host 0.0.0.0 --port 5000 --log-level info
-  pause
-  ```
-
-- [x] **3.6** Create `kiosk-server/models/print_job.py` — Pydantic model:
-  ```python
-  class PrintJob(BaseModel):
-      db_id: str
-      otp: str
-      downloadUrl: str
-      copies: int = 1
-      mode: str = "bw"
-      isTwoSided: bool = False
-      printRange: str = "All Pages"
-      totalPages: int = 1
-  ```
+- [x] **3.5** Create `kiosk-server/run_server.bat` ✅
+- [x] **3.6** Create `kiosk-server/models/print_job.py` ✅
+- [x] **3.7** **Environment Consolidation:** Root `.env` and `.env.example` created ✅
 
 ---
 
-## PHASE 4 — Python Kiosk Server: Utility Modules
-**Goal:** Port all helper functions from server.js to async Python.  
+## PHASE 4 — Python Kiosk Server: Utility Modules (Hardening)
+**Goal:** Port hardware and communication logic from Node.js to Python.  
 **Where:** `kiosk-server/utils/`
 
-- [ ] **4.1** Create `utils/printer_ping.py`:
-  ```python
-  async def check_printer_ping(ip: str) -> bool:
-  ```
-  - Run `ping -n 1 -w 2000 <ip>` via `asyncio.create_subprocess_exec`
-  - Return `True` if stdout does NOT contain "timed out" or "unreachable"
-  - Log result clearly
-
-- [ ] **4.2** Create `utils/printer_snmp.py`:
-  ```python
-  async def check_printer_snmp(ip: str) -> dict:
-      # Returns: { "is_online": bool, "status": str, "code": int }
-  ```
-  - Use `pysnmp-lextudio` to GET OID `1.3.6.1.2.1.25.3.2.1.5.1`
-  - Timeout 2 seconds, 1 retry
-  - Code 5 = JAMMED, timeout = SLEEP_MODE (treat online), else = READY
-  - Match behavior of the Node.js version exactly
-
-- [ ] **4.3** Create `utils/file_downloader.py`:
-  ```python
-  async def download_file(url: str, dest_path: str) -> str:
-  ```
-  - Use `httpx.AsyncClient` with timeout 30s
-  - Stream download to `temp_prints/` folder
-  - Return final file path
-
-- [ ] **4.4** Create `utils/windows_printer.py`:
-  ```python
-  async def send_to_printer(file_path: str, options: dict) -> None:
-  ```
-  - Options: `printer_name`, `copies`, `pages`, `paper_size`
-  - Printer name logic:
-    - `mode=bw` + `isTwoSided=False` → `"HP Officejet BW"`
-    - `mode=bw` + `isTwoSided=True` → `"HP Officejet BW Duplex"`
-    - `mode=color` → `"HP Officejet Color"`
-    - `mode=color` + `isTwoSided=True` → `"HP Officejet Color Duplex"`
-  - Use SumatraPDF CLI:
-    ```
-    SumatraPDF.exe -print-to "<printer>" -print-settings "copies=N,<range>" <file>
-    ```
-  - Run via `asyncio.create_subprocess_exec`, await completion
-
-- [ ] **4.5** Create `utils/admin_reporter.py` (replaces ec2_client.py — now reports to our own Python admin backend):
-  ```python
-  async def report_print_complete(db_id, kiosk_id, kiosk_token, paper, ink) -> None
-  async def report_print_failed(db_id, kiosk_id, kiosk_token) -> None
-  async def report_health_snapshot(kiosk_id, kiosk_token, paper, ink, status) -> None
-  ```
-  - All POST to `ADMIN_BACKEND_URL` (our new admin FastAPI server)
-  - Use `httpx.AsyncClient`, best-effort (don't crash print job if admin is down)
+- [x] **4.1** Create `utils/logger.py` — Rotating file logs ✅
+- [x] **4.2** Create `utils/printer_status.py` — **Dual-Mode** (USB + IP Fallback) ✅
+- [x] **4.3** Create `utils/print_engine.py` — SumatraPDF Automation ✅
+- [x] **4.4** Create `utils/notifications.py` — Telegram Integration ✅
+- [x] **4.5** Create `utils/cloud_client.py` — Health & Heartbeats ✅
+- [x] **4.6** Create `utils/file_downloader.py` — Async PDF retrieval ✅
 
 ---
 
@@ -680,8 +620,9 @@ Phase 11 (Deployment)      → Production rollout.
 | 1 | Database Schema | ✅ Completed |
 | 2 | Frontend Bug Fixes | ⬜ Not Started |
 | 3 | Python Kiosk Scaffold | ✅ Completed |
-| 4 | Python Utility Modules | 🟡 In Progress |
-| 5 | Python Core Routes | ⬜ Not Started |
+| 4 | Python Utility Modules | ✅ Completed |
+| 4.4 | Telegram Integration | ✅ Completed |
+| 5 | Python Core Routes | 🟡 In Progress |
 | 6 | Python Background Watchman | ⬜ Not Started |
 | 7 | Admin Backend (FastAPI) | ⬜ Not Started |
 | 8 | Admin Frontend (React) | ⬜ Not Started |
