@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     TEMP_PRINTS_DIR: Path = BASE_DIR / "temp_prints"
     STATE_FILE: Path = BASE_DIR / "kiosk_state.json"
     
+    # Project Metadata
+    PROJECT_NAME: str = "Print Spot Kiosk"
+    
+    # Telegram Notifications
+    TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    TELEGRAM_CHAT_ID: str = os.getenv("TELEGRAM_CHAT_ID", "")
+    
     # External Tools
     SUMATRA_PDF_PATH: str = os.getenv("SUMATRA_PDF_PATH", r"C:\Program Files\SumatraPDF\SumatraPDF.exe")
 

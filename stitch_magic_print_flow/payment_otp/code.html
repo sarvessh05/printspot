@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Invisible Magic — Secure Verification</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-container": "#00f4fe",
+                    "on-error-container": "#ffa8a3",
+                    "surface-bright": "#2c2c2f",
+                    "tertiary": "#a7ffb3",
+                    "surface-container-high": "#1f1f22",
+                    "on-background": "#fffbfe",
+                    "surface-container": "#19191c",
+                    "surface-container-low": "#131316",
+                    "background": "#0e0e10",
+                    "on-tertiary-fixed": "#00461c",
+                    "on-secondary-fixed-variant": "#920091",
+                    "primary-fixed-dim": "#00e5ee",
+                    "surface": "#0e0e10",
+                    "on-primary-container": "#00575b",
+                    "on-primary": "#006165",
+                    "secondary-fixed-dim": "#ffa6f3",
+                    "secondary-fixed": "#ffbdf3",
+                    "outline-variant": "#48474a",
+                    "on-secondary-container": "#fff5f9",
+                    "tertiary-container": "#2efd7c",
+                    "error-dim": "#d7383b",
+                    "on-surface": "#fffbfe",
+                    "surface-dim": "#0e0e10",
+                    "error-container": "#9f0519",
+                    "inverse-primary": "#006a6e",
+                    "on-tertiary-fixed-variant": "#00662c",
+                    "on-error": "#490006",
+                    "error": "#ff716c",
+                    "inverse-surface": "#fcf8fb",
+                    "on-primary-fixed-variant": "#006266",
+                    "on-primary-fixed": "#004346",
+                    "secondary-container": "#a900a9",
+                    "secondary": "#ff51fa",
+                    "on-surface-variant": "#adaaad",
+                    "on-tertiary": "#00652b",
+                    "outline": "#767578",
+                    "tertiary-fixed-dim": "#00ee70",
+                    "primary-fixed": "#00f4fe",
+                    "on-tertiary-container": "#005b26",
+                    "secondary-dim": "#ff51fa",
+                    "surface-variant": "#262529",
+                    "on-secondary-fixed": "#620061",
+                    "primary-dim": "#00e5ee",
+                    "surface-tint": "#a1faff",
+                    "inverse-on-surface": "#565457",
+                    "primary": "#a1faff",
+                    "tertiary-dim": "#00ee70",
+                    "surface-container-lowest": "#000000",
+                    "on-secondary": "#400040",
+                    "tertiary-fixed": "#2efd7c",
+                    "surface-container-highest": "#262529"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #000000;
+            color: #fffbfe;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .headline-font { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .micro-confetti {
+            background-image: radial-gradient(#a1faff 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.05;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-container-lowest min-h-screen selection:bg-primary-container selection:text-on-primary-container">
+<!-- Micro-confetti Particle Background -->
+<div class="fixed inset-0 pointer-events-none micro-confetti"></div>
+<div class="fixed inset-0 pointer-events-none bg-gradient-to-b from-background via-surface-container-low to-background opacity-80"></div>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-20 bg-zinc-950/40 backdrop-blur-xl">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-cyan-400" data-icon="blur_on">blur_on</span>
+<h1 class="text-2xl font-black tracking-tighter text-cyan-400 drop-shadow-[0_0_8px_rgba(0,245,255,0.5)] headline-font">Invisible Magic</h1>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex gap-8">
+<a class="text-cyan-400 font-bold transition-all duration-500 ease-in-out-expo hover:bg-white/5 px-3 py-1 rounded-lg" href="#">Verification</a>
+<a class="text-zinc-500 transition-all duration-500 ease-in-out-expo hover:bg-white/5 px-3 py-1 rounded-lg" href="#">Assets</a>
+</nav>
+<span class="material-symbols-outlined text-cyan-400 cursor-pointer" data-icon="fiber_manual_record">fiber_manual_record</span>
+</div>
+</header>
+<main class="relative pt-32 pb-12 px-6 flex flex-col items-center max-w-5xl mx-auto min-h-screen">
+<!-- Reward Moment / Success Focus Section -->
+<div class="w-full flex flex-col lg:flex-row gap-12 items-center lg:items-start justify-center">
+<!-- Left Column: Payment Confirmation Visual -->
+<div class="w-full lg:w-1/2 flex flex-col gap-8 order-2 lg:order-1">
+<div class="space-y-2">
+<h2 class="headline-font text-5xl font-extrabold tracking-tighter text-on-surface leading-tight">
+                        Confirming <br/><span class="text-primary">Ownership</span>
+</h2>
+<p class="text-on-surface-variant text-lg max-w-md">The request is almost complete. Please confirm the payment payload to finalize your ethereal asset.</p>
+</div>
+<!-- Payment Card Swipe Visual -->
+<div class="relative group">
+<!-- Glow Aura -->
+<div class="absolute -inset-4 bg-primary/10 blur-3xl rounded-full opacity-50"></div>
+<div class="relative overflow-hidden rounded-xl bg-surface-container-high p-8 shadow-2xl ring-1 ring-white/10 transition-transform duration-700 hover:scale-[1.02]">
+<div class="flex justify-between items-start mb-12">
+<div class="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-primary-container flex items-center justify-center shadow-[0_0_20px_rgba(161,250,255,0.3)]">
+<span class="material-symbols-outlined text-on-primary-container" data-icon="token">token</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-3xl" data-icon="contactless">contactless</span>
+</div>
+<div class="space-y-6">
+<div class="h-4 w-48 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full w-2/3 bg-primary/40 rounded-full"></div>
+</div>
+<div class="flex justify-between items-end">
+<div>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant font-label mb-1">Asset Hash</p>
+<p class="font-mono text-sm tracking-tighter text-on-surface">0x882...FF02</p>
+</div>
+<div class="text-right">
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant font-label mb-1">Valuation</p>
+<p class="headline-font text-2xl font-bold text-primary">0.42 ETH</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Swipe Action Indicator -->
+<div class="mt-6 flex items-center justify-between p-4 rounded-full bg-surface-container-lowest ring-1 ring-outline-variant/30">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+<span class="text-xs uppercase tracking-widest text-on-surface-variant font-label">Swipe to Authorize</span>
+</div>
+<div class="flex gap-1">
+<div class="w-2 h-2 rounded-full bg-primary/20"></div>
+<div class="w-2 h-2 rounded-full bg-primary/40"></div>
+<div class="w-2 h-2 rounded-full bg-primary/60"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: OTP Verification -->
+<div class="w-full lg:w-5/12 flex flex-col items-center order-1 lg:order-2">
+<div class="w-full max-w-sm relative">
+<!-- Soft Pulse Glow Behind OTP -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/20 blur-[100px] rounded-full animate-pulse"></div>
+<div class="relative bg-surface/60 backdrop-blur-2xl p-10 rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.4)] ring-1 ring-white/5">
+<div class="text-center mb-10">
+<span class="material-symbols-outlined text-primary text-4xl mb-4" data-icon="lock_open">lock_open</span>
+<h3 class="headline-font text-2xl font-bold text-on-surface">Security Vault</h3>
+<p class="text-sm text-on-surface-variant mt-2">Enter the 4-digit temporal key sent to your linked device.</p>
+</div>
+<!-- OTP Inputs -->
+<div class="flex justify-between gap-3 mb-10">
+<!-- Digit 1 -->
+<div class="w-16 h-20 bg-surface-container-lowest rounded-xl flex items-center justify-center ring-1 ring-outline-variant/20 shadow-inner group transition-all duration-300">
+<span class="text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(0,245,255,0.4)]">8</span>
+</div>
+<!-- Digit 2 -->
+<div class="w-16 h-20 bg-surface-container-lowest rounded-xl flex items-center justify-center ring-1 ring-primary/40 shadow-[0_0_15px_rgba(161,250,255,0.1)] transition-all duration-300">
+<span class="text-3xl font-black text-primary drop-shadow-[0_0_10px_rgba(0,245,255,0.4)]">2</span>
+</div>
+<!-- Digit 3 (Empty State) -->
+<div class="w-16 h-20 bg-surface-container-lowest rounded-xl flex items-center justify-center ring-1 ring-outline-variant/20">
+<div class="w-1.5 h-1.5 rounded-full bg-outline animate-pulse"></div>
+</div>
+<!-- Digit 4 (Empty State) -->
+<div class="w-16 h-20 bg-surface-container-lowest rounded-xl flex items-center justify-center ring-1 ring-outline-variant/20">
+<div class="w-1.5 h-1.5 rounded-full bg-outline/40"></div>
+</div>
+</div>
+<button class="w-full h-14 rounded-xl bg-gradient-to-r from-primary to-primary-container text-on-primary-container font-bold tracking-tight text-lg shadow-lg hover:shadow-primary/20 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2">
+                            Verify Identity
+                            <span class="material-symbols-outlined text-xl" data-icon="bolt" data-weight="fill" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</button>
+<div class="mt-6 text-center">
+<button class="text-xs uppercase tracking-widest text-on-surface-variant font-label hover:text-primary transition-colors">Resend Token (42s)</button>
+</div>
+</div>
+</div>
+<!-- Ready to Print Status Area -->
+<div class="mt-12 w-full max-w-sm flex flex-col gap-4">
+<div class="flex items-center gap-4 p-4 rounded-2xl bg-surface-container-low ring-1 ring-white/5 overflow-hidden relative">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-tertiary"></div>
+<div class="w-10 h-10 rounded-full bg-tertiary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary text-xl" data-icon="print">print</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<p class="text-xs font-bold text-on-surface tracking-tight">Ready to Print</p>
+<p class="text-[10px] text-tertiary font-label">READY</p>
+</div>
+<div class="h-1 w-full bg-surface-container-highest rounded-full">
+<div class="h-full w-full bg-tertiary rounded-full shadow-[0_0_8px_rgba(167,255,179,0.5)]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Secondary Context / Stats Grid (Bento Style) -->
+<div class="mt-24 w-full grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="md:col-span-2 p-8 rounded-3xl bg-surface-container/50 backdrop-blur-sm ring-1 ring-white/5 relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-8">
+<span class="material-symbols-outlined text-on-surface-variant/20 text-6xl group-hover:scale-110 transition-transform duration-700" data-icon="verified_user">verified_user</span>
+</div>
+<h4 class="headline-font text-xl font-bold mb-4">Encryption Layer</h4>
+<p class="text-on-surface-variant leading-relaxed max-w-md">Your transaction is secured with end-to-end quantum resistance. Verification happens on the edge, ensuring zero latency and maximum privacy for your ethereal assets.</p>
+<div class="mt-8 flex gap-4">
+<div class="px-4 py-2 rounded-full bg-surface-container-highest text-xs font-label uppercase tracking-widest text-on-surface-variant">AES-512</div>
+<div class="px-4 py-2 rounded-full bg-surface-container-highest text-xs font-label uppercase tracking-widest text-on-surface-variant">Liquid Network</div>
+</div>
+</div>
+<div class="p-8 rounded-3xl bg-gradient-to-br from-primary/10 to-transparent ring-1 ring-primary/20 flex flex-col justify-between">
+<div>
+<h4 class="headline-font text-xl font-bold mb-2">Network Load</h4>
+<p class="text-on-surface-variant text-sm">Real-time status of the magic fabric.</p>
+</div>
+<div class="mt-12 space-y-4">
+<div class="flex justify-between items-end">
+<span class="text-3xl font-black text-primary">0.02ms</span>
+<span class="text-[10px] font-label uppercase tracking-widest text-primary mb-1">Latency</span>
+</div>
+<div class="h-1 w-full bg-primary/10 rounded-full overflow-hidden">
+<div class="h-full w-1/4 bg-primary rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer Decorative Particle -->
+<div class="fixed bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+<!-- Images with descriptive alt tags for structural background placeholders if needed -->
+<!-- For this focused view, we use tonal shifts and gradients as per the design system, avoiding generic images -->
+</body></html>

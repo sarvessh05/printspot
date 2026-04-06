@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
     print("🛑 Kiosk Server shutting down...")
 
 app = FastAPI(
-    title="PrintKro Kiosk Server",
+    title="Print Spot Kiosk Server",
     version="2.0.0",
     lifespan=lifespan
 )

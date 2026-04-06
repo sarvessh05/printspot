@@ -1,4 +1,4 @@
-# PrintKro — Master Task List
+# Print Spot — Master Task List
 **Last Updated:** 2026-04-05  
 **Status:** In Progress
 
@@ -236,7 +236,7 @@ Time-series health snapshots sent by each kiosk.
 **Goal:** Port and fix the primary print engine and admin routes.  
 **Where:** `kiosk-server/routes/`
 
-- [ ] **5.1** Create `routes/print_route.py` — `POST /print`:
+- [x] **5.1** Create `routes/print_route.py` — `POST /print`: ✅
   - Accept `List[PrintJob]` in request body
   - **Pre-flight checks:**
     - Calculate total pages needed = sum(job.totalPages * job.copies)
@@ -257,11 +257,11 @@ Time-series health snapshots sent by each kiosk.
     - `await report_print_failed(...)` for all jobs
     - Return 500 `MACHINE_ERROR`
 
-- [ ] **5.2** Create `routes/printer_status_route.py`:
+- [x] **5.2** Create `routes/printer_status_route.py`: ✅
   - `GET /api/printer-status` → returns `{ "status": global_printer_status }`
   - `GET /admin/reset-jam` → sets `global_printer_status = "NORMAL"`, return 200
 
-- [ ] **5.3** Create `routes/admin_route.py`:
+- [x] **5.3** Create `routes/admin_route.py`: ✅
   - `POST /admin/reset` — body: `{ password, paper, ink }`
     - Check `password == ADMIN_PASSWORD` else 401
     - If `paper == True`: `state["paper"] = 500`
@@ -280,7 +280,7 @@ Time-series health snapshots sent by each kiosk.
 **Goal:** Port the 3-second background monitoring loop.  
 **Where:** `kiosk-server/background/watchman.py`
 
-- [ ] **6.1** Create `background/watchman.py`:
+- [x] **6.1** Create `background/watchman.py`: ✅
   ```python
   global_printer_status: str = "NORMAL"
   
@@ -301,7 +301,7 @@ Time-series health snapshots sent by each kiosk.
   - If any check returns JAMMED → set `global_printer_status = "JAMMED"`
   - If all clear → set `global_printer_status = "NORMAL"`
 
-- [ ] **6.2** Register watchman in `server.py` lifespan:
+- [x] **6.2** Register watchman in `server.py` lifespan: ✅
   ```python
   @asynccontextmanager
   async def lifespan(app: FastAPI):
@@ -323,7 +323,7 @@ Time-series health snapshots sent by each kiosk.
 
 ### Project Setup
 
-- [ ] **7.1** Create `admin-backend/` folder with:
+- [x] **7.1** Create `admin-backend/` folder with structure: ✅
   - `requirements.txt`: `fastapi`, `uvicorn`, `supabase`, `python-dotenv`, `httpx`, `pydantic`
   - `.env`: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_MASTER_PASSWORD`
   - `server.py` — FastAPI app on port 8080
@@ -542,7 +542,7 @@ Time-series health snapshots sent by each kiosk.
 ## FINAL DIRECTORY STRUCTURE
 
 ```
-PrintKro_Kiosk/
+Print Spot_Kiosk/
 │
 ├── frontend/                    # Customer-facing React app (Vercel)
 │   └── src/pages/
@@ -621,10 +621,9 @@ Phase 11 (Deployment)      → Production rollout.
 | 2 | Frontend Bug Fixes | ⬜ Not Started |
 | 3 | Python Kiosk Scaffold | ✅ Completed |
 | 4 | Python Utility Modules | ✅ Completed |
-| 4.4 | Telegram Integration | ✅ Completed |
 | 5 | Python Core Routes | ✅ Completed |
 | 6 | Python Background Watchman | ✅ Completed |
-| 7 | Admin Backend (FastAPI) | ⬜ Not Started |
+| 7 | Admin Backend (FastAPI) | 🔄 In Progress |
 | 8 | Admin Frontend (React) | ⬜ Not Started |
 | 9 | Security Hardening | ⬜ Not Started |
 | 10 | Integration Testing | ⬜ Not Started |
