@@ -7,13 +7,20 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from config import settings
 
+from routes import print_route, admin_route
+from background.watchman import watchman_loop
+import asyncio
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifecycle events for the FastAPI server."""
-    # This is where we'll start the Watchman loop in Phase 6
-    print("Kiosk Server starting up...")
+    print("KIOSK STARTING UP...")
+    # Start the Watchman background task
+    watchman_task = asyncio.create_task(watchman_loop())
     yield
-    print("Kiosk Server shutting down...")
+    # Cleanup
+    watchman_task.cancel()
+    print("🛑 Kiosk Server shutting down...")
 
 app = FastAPI(
     title="PrintKro Kiosk Server",
@@ -21,7 +28,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Enable CORS for local development (Frontend is usually on 5173, Backend on 5000)
+# Enable CORS for local development
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,10 +37,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Routes inclusion (Phases 4-5) ---
-# When routers are ready, add them here
-# from .routes import print_route, admin_route
-# app.include_router(print_route.router)
+# --- Routes inclusion ---
+app.include_router(print_route.router)
+app.include_router(admin_route.router)
 
 @app.get("/api/health")
 async def health_check():

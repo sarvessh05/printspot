@@ -310,7 +310,7 @@ Time-series health snapshots sent by each kiosk.
       task.cancel()
   ```
 
-- [ ] **6.3** Add health heartbeat inside watchman loop (every 30 seconds):
+- [x] **6.3** Add health heartbeat inside watchman loop (every 30 seconds): ✅
   - Call `report_health_snapshot(kiosk_id, token, paper, ink, status)`
   - This will keep the admin dashboard updated in near-real-time
 
@@ -622,8 +622,8 @@ Phase 11 (Deployment)      → Production rollout.
 | 3 | Python Kiosk Scaffold | ✅ Completed |
 | 4 | Python Utility Modules | ✅ Completed |
 | 4.4 | Telegram Integration | ✅ Completed |
-| 5 | Python Core Routes | 🟡 In Progress |
-| 6 | Python Background Watchman | ⬜ Not Started |
+| 5 | Python Core Routes | ✅ Completed |
+| 6 | Python Background Watchman | ✅ Completed |
 | 7 | Admin Backend (FastAPI) | ⬜ Not Started |
 | 8 | Admin Frontend (React) | ⬜ Not Started |
 | 9 | Security Hardening | ⬜ Not Started |

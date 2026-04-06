@@ -1,6 +1,7 @@
 import httpx
 import os
 from pathlib import Path
+from typing import Optional
 from .logger import get_logger
 
 logger = get_logger("file_downloader")

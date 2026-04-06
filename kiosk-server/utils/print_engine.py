@@ -10,7 +10,7 @@ logger = get_logger("print_engine")
 
 # Path to the bundled SumatraPDF or the system one
 # In a real environment, we'd bundle this alongside the server or point to it via PATH
-SUMATRA_EXE = settings.get("SUMATRA_EXE", "SumatraPDF.exe")
+SUMATRA_EXE = settings.SUMATRA_PDF_PATH
 
 async def print_pdf(file_path: Path, options: Dict) -> bool:
     """
@@ -40,11 +40,11 @@ async def print_pdf(file_path: Path, options: Dict) -> bool:
     # On many HP printers, you don't even need logical printers if you use -print-settings,
     # but the old app had: "HP Officejet BW", etc.
     # We'll use the default printer if none is specified in settings.
-    printer_name = settings.get("TARGET_PRINTER", None)
+    printer_name = settings.TARGET_PRINTER
     
     command = [
         SUMATRA_EXE,
-        "-print-to-default" if not printer_name else f"-print-to {printer_name}",
+        "-print-to-default" if not printer_name else f"-print-to \"{printer_name}\"",
         "-print-settings", f"\"{settings_str}\"",
         "-silent",
         str(file_path)

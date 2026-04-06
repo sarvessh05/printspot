@@ -13,7 +13,7 @@ class CloudClient:
     """
     def __init__(self):
         self.supabase_url = settings.SUPABASE_URL
-        self.supabase_key = settings.SUPABASE_SERVICE_KEY
+        self.supabase_key = settings.SUPABASE_KEY
         self.kiosk_id = settings.KIOSK_ID
         self.kiosk_token = settings.VITE_KIOSK_TOKEN
 
@@ -28,17 +28,14 @@ class CloudClient:
 
         state = await get_kiosk_state()
         
-        # URL for the kiosk_health upsert
+        # 1. Supabase Report
         target_url = f"{self.supabase_url}/rest/v1/kiosk_health"
-        
         headers = {
             "apikey": self.supabase_key,
             "Authorization": f"Bearer {self.supabase_key}",
             "Content-Type": "application/json",
-            "Prefer": "resolution=merge-duplicates" # Upsert on conflict (if id is kiosk_id)
+            "Prefer": "resolution=merge-duplicates"
         }
-
-        # ID management for heath: we use kiosk_id as the unique tracker
         payload = {
             "kiosk_id": self.kiosk_id,
             "paper_left": state.get("paper", 0),
@@ -49,43 +46,93 @@ class CloudClient:
 
         try:
             async with httpx.AsyncClient(timeout=10) as client:
-                # PostgREST upsert (check if we should use PATCH or POST)
-                # For health updates, we usually PATCH or POST with upsert prefer
-                response = await client.post(target_url, json=payload, headers=headers)
-                
-                if response.status_code in [200, 201]:
-                    logger.info("☁️ Heartbeat: Cloud Dashboard Health Updated.")
-                else:
-                    logger.error(f"❌ Cloud Report Failed: {response.status_code} - {response.text}")
+                await client.post(target_url, json=payload, headers=headers)
+                logger.info("☁️ Heartbeat: Cloud Dashboard Health Updated.")
         except Exception as e:
             logger.error(f"💥 Failed to reach Supabase Cloud: {e}")
 
-    async def complete_job_stats(self, db_id: str, status: str = "completed"):
+        # 2. Optional: Report to EC2 Admin Panel if exists
+        if settings.ADMIN_BACKEND_URL:
+            try:
+                ec2_url = f"{settings.ADMIN_BACKEND_URL}/api/kiosk/report-health"
+                async with httpx.AsyncClient(timeout=5) as client:
+                    await client.post(ec2_url, json={
+                        "kiosk_id": self.kiosk_id,
+                        "kiosk_token": self.kiosk_token,
+                        "paper": state.get("paper", 0),
+                        "ink": state.get("ink", 0),
+                        "printer_status": hardware_status
+                    })
+            except:
+                pass
+
+    async def complete_job_stats(self, db_id: str, paper_used: int = 1):
         """
-        Updates the final print_status of an order in the database.
+        Signals completion to both Supabase (Database) and EC2 (Analytics Dashboard).
         """
+        # 1. Update Supabase Database
         target_url = f"{self.supabase_url}/rest/v1/print_orders?db_id=eq.{db_id}"
-        
         headers = {
             "apikey": self.supabase_key,
             "Authorization": f"Bearer {self.supabase_key}",
             "Content-Type": "application/json"
         }
-
-        payload = {
-            "print_status": status,
-            "kiosk_id": self.kiosk_id
-        }
+        payload = {"print_status": "completed", "kiosk_id": self.kiosk_id}
 
         try:
             async with httpx.AsyncClient(timeout=10) as client:
-                response = await client.patch(target_url, json=payload, headers=headers)
-                if response.status_code == 204: # Success for PATCH usually returns 204
-                     logger.info(f"✅ Cloud Order {db_id} marked as {status}.")
-                else:
-                     logger.error(f"❌ Order Update Failed: {response.text}")
+                await client.patch(target_url, json=payload, headers=headers)
+                logger.info(f"✅ Supabase Order {db_id} marked as completed.")
         except Exception as e:
-            logger.error(f"💥 Order cloud sync failure: {e}")
+            logger.error(f"💥 Supabase Job Completion Update Fail: {e}")
+
+        # 2. Update EC2 Analytics Dashboard (matching server.js)
+        if settings.ADMIN_BACKEND_URL:
+            ec2_url = f"{settings.ADMIN_BACKEND_URL}/api/kiosk/complete"
+            ec2_payload = {
+                "db_id": db_id,
+                "kiosk_id": self.kiosk_id,
+                "kiosk_token": self.kiosk_token,
+                "paper_remaining": (await get_kiosk_state()).get("paper", 0),
+                "ink_remaining": (await get_kiosk_state()).get("ink", 0)
+            }
+            try:
+                async with httpx.AsyncClient(timeout=10) as client:
+                    await client.post(ec2_url, json=ec2_payload)
+                    logger.info(f"☁️ EC2 Cloud Dashboard Sync (Completed) - Job {db_id}")
+            except Exception as e:
+                 logger.debug(f"EC2 Sync failed (dashboard may be down): {e}")
+
+    async def revert_job(self, db_id: str):
+        """
+        Reverts an OTP to pending status if a print fails, allowing the customer to try again.
+        Matches Node's revertOtpOnEC2.
+        """
+        # 1. Supabase Revert
+        target_url = f"{self.supabase_url}/rest/v1/print_orders?db_id=eq.{db_id}"
+        headers = {
+            "apikey": self.supabase_key,
+            "Authorization": f"Bearer {self.supabase_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {"print_status": "pending"}
+
+        try:
+             async with httpx.AsyncClient(timeout=10) as client:
+                await client.patch(target_url, json=payload, headers=headers)
+                logger.info(f"✅ Supabase OTP Reverted for job {db_id}")
+        except Exception as e:
+            logger.error(f"💥 Supabase Job Revert Fail: {e}")
+
+        # 2. EC2 Revert (matching server.js)
+        if settings.ADMIN_BACKEND_URL:
+            ec2_url = f"{settings.ADMIN_BACKEND_URL}/api/kiosk/revert"
+            try:
+                async with httpx.AsyncClient(timeout=10) as client:
+                    await client.post(ec2_url, json={"db_id": db_id})
+                    logger.info(f"✅ EC2 OTP Reverted for job {db_id}")
+            except Exception as e:
+                 logger.debug(f"EC2 Revert failed: {e}")
 
 # Global instance
 cloud = CloudClient()
