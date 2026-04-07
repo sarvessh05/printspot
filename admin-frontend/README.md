@@ -1,16 +1,32 @@
-# React + Vite
+# Admin Dashboard UI 📊
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the centralized management portal for the Print Spot Kiosk network.
 
-Currently, two official plugins are available:
+## 🚀 Key Features
+- **Dashboard Overview**: Detailed statistics for daily sales, revenue, and kiosk health.
+- **Real-time Sales Trend**: Animated charts for sales data via **Chart.js** and **React-Chartjs-2**.
+- **Kiosk Monitoring**: Live list of kiosks showing the printer's current online/offline and ink status.
+- **Pricing Manager**: Directly edit the pricing per page for black & white or color prints.
+- **Order History**: View recent transactions and their print status.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ⚙️ Configuration
+The admin-frontend uses its own **`.env`** file at `admin-frontend/.env`.
 
-## React Compiler
+**Required Variables**:
+- `VITE_BACKEND_URL`: URL of the Cloud Admin API ([http://localhost:8083](http://localhost:8083)).
+- `VITE_ADMIN_PASSWORD`: Master password for the admin dashboard.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Run Locally
+```cmd
+npm run dev -- --port 5174
+```
 
-## Expanding the ESLint configuration
+## ⚠️ Troubleshooting
+- **Failed to resolve import "chart.js"**: This happens if the dependencies are not correctly cached. I've already installed them via `npm install chart.js react-chartjs-2`. 
+- **Port Conflict**: If 5174 is in use, use `npx vite --port 5174 --force` to override and clear optimization cache.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 📦 Main Dependencies
+- `chart.js`
+- `react-chartjs-2`
+- `lucide-react` (icons)
+- `react-router-dom` (navigation)

@@ -1,16 +1,29 @@
-# React + Vite
+# Kiosk Frontend (Customer UI) 🖥️
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the customer-facing interface for the Print Spot Kiosk. 
 
-Currently, two official plugins are available:
+## 🚀 Key Features
+- **File Upload**: Customers can select files (PDF, JPG, PNG) for printing.
+- **Print Preview**: Shows a visual preview of the uploaded content.
+- **Payment & OTP**: Integrates with the Cloud API to generate a Razorpay order and fetch an OTP.
+- **Admin Access**: Hidden maintenance screen reachable via [localhost:5173/maintenance](http://localhost:5173/maintenance).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ⚙️ Configuration
+The frontend uses environment variables from the **root `.env`** file via `vite.config.js` (`envDir: '..'`).
 
-## React Compiler
+**Required Variables in Root `.env`**:
+- `VITE_SUPABASE_URL`: For storing customer metadata.
+- `VITE_SUPABASE_ANON_KEY`: Supabase authentication.
+- `VITE_EC2_IP`: URL of the Cloud Admin API (currently [http://localhost:8083](http://localhost:8083)).
+- `VITE_KIOSK_SERVER_IP`: URL of the local hardware server (typically [http://localhost:5000](http://localhost:5000)).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Run Locally
+```cmd
+npm run dev -- --port 5173
+```
+- If the app is already listening on 5173, Vite will automatically increment to 5174. 
+- Ensure you always check the terminal output for the correct port.
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🗺️ Routing
+- `/`: Main customer interface (Upload -> Preview -> Payment).
+- `/maintenance`: Admin actions for local kiosk maintenance (Printer logs, Reset status).
