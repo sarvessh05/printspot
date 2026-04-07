@@ -28,7 +28,7 @@ async def download_file(url: str, filename: str) -> Optional[Path]:
                     return None
                 
                 with open(local_path, "wb") as f:
-                    for chunk in response.iter_bytes():
+                    async for chunk in response.aiter_bytes():
                         f.write(chunk)
         
         if local_path.exists():

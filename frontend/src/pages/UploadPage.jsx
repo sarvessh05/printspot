@@ -16,7 +16,8 @@ const UploadPage = () => {
 
   useEffect(() => {
     // Fetch pricing from backend
-    fetch('http://localhost:8080/api/settings/pricing')
+    const backendUrl = import.meta.env.VITE_EC2_IP || 'http://localhost:8080';
+    fetch(`${backendUrl}/api/settings/pricing`)
       .then(res => res.json())
       .then(data => setPricing(data))
       .catch(err => console.log("Pricing fetch error", err));

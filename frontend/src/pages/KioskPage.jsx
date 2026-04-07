@@ -1,13 +1,9 @@
-//   );
-// };
-
-// export default KioskPage;
-
-
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { Loader, Printer, AlertTriangle, CheckCircle, ArrowRight } from 'lucide-react';
+
+// Derived from build-time env var — never changes at runtime
+const KIOSK_SERVER_URL = import.meta.env.VITE_KIOSK_SERVER_IP || 'http://localhost:5000';
 
 const KioskPage = () => {
   const [showSlides, setShowSlides] = useState(true);
@@ -63,7 +59,7 @@ const KioskPage = () => {
     if (status === "printing_physical") {
       pollTimer = setInterval(async () => {
         try {
-          const res = await fetch('http://localhost:5000/api/printer-status');
+          const res = await fetch(`${KIOSK_SERVER_URL}/api/printer-status`);
           const data = await res.json();
           
           if (data.status === 'JAMMED') {
@@ -109,7 +105,7 @@ const KioskPage = () => {
   // 🛠️ Admin Submit Function
   const handleAdminSubmit = async (type) => {
     try {
-      const res = await fetch('http://localhost:5000/admin/reset', {
+      const res = await fetch(`${KIOSK_SERVER_URL}/admin/reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ paper: type === 'paper', ink: type === 'ink', password: adminPass })
@@ -155,7 +151,7 @@ const KioskPage = () => {
         totalPages: order.total_pages
       }));
 
-      const response = await fetch('http://localhost:5000/print', {
+      const response = await fetch(`${KIOSK_SERVER_URL}/print`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(jobs)
@@ -166,13 +162,14 @@ const KioskPage = () => {
       if (response.ok && serverResult.success) {
         setStatus("printing_physical");
       } else {
-        // 🚨 HARDWARE CHECKS
-        if (serverResult.message === "OUT_OF_PAPER" || serverResult.message === "OUT_OF_INK") {
-          throw new Error(serverResult.message);
-        } else if (serverResult.message === "MACHINE_ERROR") {
+        // 🚨 FastAPI HTTPException returns { detail: "..." }, not { message: "..." }
+        const errDetail = serverResult.detail || serverResult.message || "Unknown error occurred.";
+        if (errDetail === "OUT_OF_PAPER" || errDetail === "OUT_OF_INK") {
+          throw new Error(errDetail);
+        } else if (errDetail === "MACHINE_ERROR" || errDetail === "MACHINE_OFFLINE" || errDetail === "MACHINE_JAMMED") {
           throw new Error("MACHINE_ERROR");
         } else {
-          throw new Error(serverResult.message || "Unknown error occurred.");
+          throw new Error(errDetail);
         }
       }
 

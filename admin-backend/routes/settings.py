@@ -11,7 +11,6 @@ class PricingUpdate(BaseModel):
     double_sided_discount: int
 
 def verify_admin(x_admin_password: str = Header(None)):
-    print(f"DEBUG: Received header: {x_admin_password}, Expected: {settings.ADMIN_MASTER_PASSWORD}")
     if x_admin_password != settings.ADMIN_MASTER_PASSWORD:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return True

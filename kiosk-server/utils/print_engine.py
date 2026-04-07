@@ -38,25 +38,39 @@ async def print_pdf(file_path: Path, options: Dict) -> bool:
     monochrome = "monochrome" if mode == "bw" else "color"
 
     # Settings string for SumatraPDF -print-settings flag
-    # Format: "copies=1,duplexlong,monochrome"
+    # Format: "copies=1,duplexlong,monochrome,pages=1-10"
     settings_str = f"copies={copies},{duplex},{monochrome},paper=A4,fit"
     
-    # Target printer logic:
-    # On many HP printers, you don't even need logical printers if you use -print-settings,
-    # but the old app had: "HP Officejet BW", etc.
-    # We'll use the default printer if none is specified in settings.
-    printer_name = settings.TARGET_PRINTER
+    # Add page ranges if specified (e.g. "1-5,7")
+    page_range = options.get("pages")
+    if page_range:
+        settings_str += f",pages={page_range}"
     
+    # Determine correct printer name based on requirements
+    if mode == "color":
+        if is_two_sided:
+            printer_name = settings.PRINTER_COLOR_DUPLEX
+        else:
+            printer_name = settings.PRINTER_COLOR
+    else: # default to bw
+        if is_two_sided:
+            printer_name = settings.PRINTER_BW_DUPLEX
+        else:
+            printer_name = settings.PRINTER_BW
+
+    # SumatraPDF CLI - print-to command requires -print-to "Printer Name"
+    # Sumatra expects the flag then the quoted name
     command = [
-        SUMATRA_EXE,
-        "-print-to-default" if not printer_name else f"-print-to \"{printer_name}\"",
-        "-print-settings", f"\"{settings_str}\"",
+        f'"{SUMATRA_EXE}"',
+        f'-print-to "{printer_name}"',
+        f'-print-settings "{settings_str}"',
         "-silent",
-        str(file_path)
+        f'"{str(file_path)}"'
     ]
     
     cmd_str = " ".join(command)
-    logger.info(f"🚀 Command: {cmd_str}")
+    logger.info(f"🚀 Using Printer: {printer_name}")
+    logger.info(f"📋 Command: {cmd_str}")
 
     try:
         # Create subprocess and wait for completion

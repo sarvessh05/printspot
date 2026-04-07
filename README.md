@@ -15,7 +15,17 @@ The following components work together to provide a seamless printing experience
 
 ---
 
-## 🚀 Quick Start (Local Development)
+## 🚀 Automation (Recommended)
+
+To start the **entire system** (Backend, Kiosk Server, and both Frontends) with a single click:
+
+1.  Open the root directory in File Explorer.
+2.  Double-click **`run_all.bat`**.
+3.  Each service will open in its own window. **Do not close these windows** while the kiosk is in use.
+
+---
+
+## 🚀 Manual Start (Custom Development)
 
 ### 1. Preparation
 Ensure you have the following installed:

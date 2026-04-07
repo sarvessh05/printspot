@@ -1,3 +1,224 @@
- @tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* =========================================
+   PrintKro / The Print Spot — Global Design System
+   Brand: Sky-Blue (#0ea5e9) on White/Light-Blue
+   Applies to: ALL pages (Landing, Upload, Review, Success, Kiosk)
+   ========================================= */
+
+/* --- Fonts --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* --- CSS Variables (Design Tokens) --- */
+:root {
+  --brand-primary: #0ea5e9;
+  --brand-primary-dark: #0284c7;
+  --brand-primary-glow: rgba(14, 165, 233, 0.4);
+  --brand-primary-soft: rgba(14, 165, 233, 0.1);
+  --brand-primary-border: rgba(14, 165, 233, 0.25);
+
+  --bg-page: #f0f9ff;
+  --bg-card: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+
+  --shadow-card: 0 4px 24px rgba(14, 165, 233, 0.08), 0 1px 4px rgba(0,0,0,0.06);
+  --shadow-btn: 0 4px 12px rgba(14, 165, 233, 0.35);
+
+  --border-radius-card: 1.25rem; /* 20px */
+  --border-radius-btn: 50px;
+  --transition: all 0.25s ease;
+}
+
+/* --- Global Reset --- */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Page Wrapper (all pages use min-vh-100) --- */
+.page-wrapper {
+  min-height: 100vh;
+  background-color: var(--bg-page);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+}
+
+/* --- Brand Card (shared card style) --- */
+.brand-card {
+  background: var(--bg-card);
+  border: none;
+  border-radius: var(--border-radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 2rem;
+  width: 100%;
+}
+
+/* --- Brand Button --- */
+.btn-brand {
+  background-color: var(--brand-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--border-radius-btn);
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  padding: 0.75rem 1.75rem;
+  transition: var(--transition);
+  cursor: pointer;
+}
+.btn-brand:hover, .btn-brand:focus {
+  background-color: var(--brand-primary-dark);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-btn);
+  outline: none;
+}
+.btn-brand:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-brand-outline {
+  background: transparent;
+  color: var(--brand-primary);
+  border: 2px solid var(--brand-primary);
+  border-radius: var(--border-radius-btn);
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  padding: 0.75rem 1.75rem;
+  transition: var(--transition);
+  cursor: pointer;
+}
+.btn-brand-outline:hover {
+  background-color: var(--brand-primary-soft);
+  color: var(--brand-primary);
+}
+
+/* --- Brand Logo Ring --- */
+.brand-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 2px solid var(--brand-primary-border);
+  object-fit: cover;
+  padding: 4px;
+}
+
+/* --- Navbar --- */
+.brand-navbar {
+  background: #ffffff;
+  box-shadow: 0 1px 12px rgba(14, 165, 233, 0.08);
+  padding: 0.75rem 1.5rem;
+}
+.brand-navbar .navbar-brand {
+  font-weight: 800;
+  font-size: 1.35rem;
+  color: var(--brand-primary);
+  text-decoration: none;
+}
+
+/* --- OTP Display Box --- */
+.otp-display-box {
+  background: var(--brand-primary-soft);
+  border: 1.5px solid var(--brand-primary-border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+.otp-display-box .otp-label {
+  color: var(--brand-primary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.otp-display-box .otp-code {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: 12px;
+  color: var(--brand-primary);
+}
+
+/* --- Status / Alert Area --- */
+.status-banner {
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.status-banner.error { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
+.status-banner.success { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }
+.status-banner.warning { background: #fffbeb; color: #b45309; border: 1px solid #fcd34d; }
+.status-banner.info { background: var(--brand-primary-soft); color: var(--brand-primary-dark); border: 1px solid var(--brand-primary-border); }
+
+/* --- Kiosk Numpad --- */
+.numpad-key {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid var(--brand-primary-border);
+  background: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.numpad-key:hover {
+  background: var(--brand-primary-soft);
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  transform: scale(1.08);
+}
+.numpad-key:active {
+  transform: scale(0.96);
+}
+
+/* --- Upload Drop Zone --- */
+.upload-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 1rem;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: var(--transition);
+  padding: 2rem;
+  text-align: center;
+}
+.upload-dropzone:hover {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary-soft);
+}
+
+/* --- Spinner (override Bootstrap spin) --- */
+.fa-spin { animation: fa-spin 1s linear infinite; }
+@keyframes fa-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* --- Utility: Text Brand Color --- */
+.text-brand { color: var(--brand-primary) !important; }
+
+/* --- Responsive Tweaks --- */
+@media (max-width: 576px) {
+  .brand-card { padding: 1.25rem; }
+  .otp-display-box .otp-code { font-size: 2.25rem; letter-spacing: 8px; }
+  .numpad-key { width: 68px; height: 68px; font-size: 1.25rem; }
+}

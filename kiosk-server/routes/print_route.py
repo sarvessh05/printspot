@@ -7,6 +7,7 @@ from utils.print_engine import print_pdf
 from utils.cloud_client import cloud
 from utils.file_downloader import download_file
 from utils.logger import get_logger
+from utils.notifications import notifier
 from config import settings
 import os
 from pathlib import Path
@@ -33,7 +34,7 @@ async def print_jobs_endpoint(jobs: List[PrintJob]):
     if state.get("paper", 0) < required_pages or state.get("ink", 0) < required_pages:
         issue = "OUT_OF_PAPER" if state.get("paper", 0) < required_pages else "OUT_OF_INK"
         logger.error(f"[FAILED] CHECK FAILED: KIOSK IS {issue}")
-        # REVERT OTP ON CLOUD (so customer doesn't lose money/OTP)
+        await notifier.send_alert(f"⚠️ {issue} — OTP: {otp}")
         for job in jobs:
             await cloud.revert_job(job.db_id)
         raise HTTPException(status_code=400, detail=issue)
@@ -42,41 +43,41 @@ async def print_jobs_endpoint(jobs: List[PrintJob]):
     status_info = await printer_tracker.get_comprehensive_status()
     if not status_info["is_online"]:
         logger.error("[FAILED] MACHINE OFFLINE. Reverting OTPs...")
+        await notifier.send_alert(f"🖨️ MACHINE OFFLINE — OTP: {otp} reverted.")
         for job in jobs:
             await cloud.revert_job(job.db_id)
         raise HTTPException(status_code=400, detail="MACHINE_OFFLINE")
         
     if status_info["status"] == "JAMMED":
         logger.error("[JAMMED] MACHINE JAMMED. Reverting OTPs...")
+        await notifier.send_alert(f"🖨️ PAPER JAM DETECTED — OTP: {otp} reverted.")
         for job in jobs:
             await cloud.revert_job(job.db_id)
         raise HTTPException(status_code=400, detail="MACHINE_JAMMED")
 
     # 3. EXECUTION: DOWNLOAD AND PRINT
-    logger.info(f"[STARTING] All checks passed. Starting print series for Job ID {job_id_log}...")
+    logger.info(f"[STARTING] All checks passed. Starting print series for OTP {otp}...")
     
     try:
         temp_dir = settings.TEMP_PRINTS_DIR
         temp_dir.mkdir(exist_ok=True)
 
         for job in jobs:
-            local_path = temp_dir / f"print_{job.db_id}.pdf"
+            filename = f"print_{job.db_id}.pdf"
             
-            # Download
+            # Download — returns absolute Path or None on failure
             logger.info(f"[HTTP] Downloading file for job {job.db_id}...")
-            if not await download_file(job.downloadUrl, local_path):
+            local_path = await download_file(job.downloadUrl, filename)
+            if not local_path:
                 logger.error(f"[FAILED] Download failed for {job.db_id}")
                 await cloud.revert_job(job.db_id)
                 continue
 
-            # Map settings (bw, color, duplex)
-            # server.js logic: "HP Officejet BW", "HP Officejet Color", etc.
-            # Python logic: We use SumatraPDF - settings handles printer selection
-            
+            # Map settings correctly to what print_engine expects
             options = {
                 "copies": int(job.copies) or 1,
-                "mono": job.mode == "bw",
-                "duplex": job.isTwoSided
+                "mode": job.mode,          # 'bw' or 'color'
+                "isTwoSided": job.isTwoSided,
             }
             
             # Page range handling
@@ -94,9 +95,10 @@ async def print_jobs_endpoint(jobs: List[PrintJob]):
                 await cloud.complete_job_stats(job.db_id, paper_used=(int(job.totalPages) or 1) * (int(job.copies) or 1))
             else:
                 logger.error(f"[FAILED] Printer Dispatch FAILED for {job.db_id}")
+                await notifier.send_alert(f"❌ Print FAILED for Job {job.db_id} — OTP: {otp}")
                 await cloud.revert_job(job.db_id)
 
-            # Cleanup
+            # Cleanup temp file
             if local_path.exists():
                 local_path.unlink()
 
@@ -106,6 +108,7 @@ async def print_jobs_endpoint(jobs: List[PrintJob]):
 
     except Exception as e:
         logger.critical(f"[CRITICAL] CRITICAL ERROR in print lifecycle: {e}")
+        await notifier.send_alert(f"💥 CRITICAL ERROR in Print Lifecycle!\nOTP: {otp}\nError: {str(e)}")
         # One last attempt to revert if something broke midway
         for job in jobs:
             await cloud.revert_job(job.db_id)

@@ -71,7 +71,7 @@ class CloudClient:
         Signals completion to both Supabase (Database) and EC2 (Analytics Dashboard).
         """
         # 1. Update Supabase Database
-        target_url = f"{self.supabase_url}/rest/v1/print_orders?db_id=eq.{db_id}"
+        target_url = f"{self.supabase_url}/rest/v1/print_orders?id=eq.{db_id}"
         headers = {
             "apikey": self.supabase_key,
             "Authorization": f"Bearer {self.supabase_key}",
@@ -109,7 +109,7 @@ class CloudClient:
         Matches Node's revertOtpOnEC2.
         """
         # 1. Supabase Revert
-        target_url = f"{self.supabase_url}/rest/v1/print_orders?db_id=eq.{db_id}"
+        target_url = f"{self.supabase_url}/rest/v1/print_orders?id=eq.{db_id}"
         headers = {
             "apikey": self.supabase_key,
             "Authorization": f"Bearer {self.supabase_key}",

@@ -1,6 +1,7 @@
 import os
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
+from typing import List
 
 load_dotenv()
 
@@ -10,6 +11,19 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     PORT: int = 8080
+
+    # Dev vs Production mode — set DEBUG=False in production .env
+    # When False: Swagger /docs is disabled, CORS is restricted
+    DEBUG: bool = os.getenv("DEBUG", "True").lower() == "true"
+
+    # CORS Origins — set to your Vercel domain in production
+    # Example: ALLOWED_ORIGINS=https://theprintspot.in,https://www.theprintspot.in
+    ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "*")
+    
+    @property
+    def allowed_origins_list(self) -> List[str]:
+        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",")]
+
     
     # Security Parameters
     # Header key used for admin authentication: X-Admin-Password

@@ -27,8 +27,9 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
-      // 1. Fetch Live Hardware Status from Node.js (Mini PC)
-      const nodeResponse = await axios.get('http://localhost:5000/status');
+      // 1. Fetch Live Hardware Status from Kiosk Server (Python FastAPI)
+      const kioskUrl = import.meta.env.VITE_KIOSK_SERVER_IP || 'http://localhost:5000';
+      const nodeResponse = await axios.get(`${kioskUrl}/api/health`);
       if (nodeResponse.data && nodeResponse.data.state) {
         setHardwareState(nodeResponse.data.state);
       }

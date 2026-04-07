@@ -34,10 +34,17 @@ class PrinterStatusTracker:
         try:
             # Query Win32_Printer for local printers
             printers = _wmi_client.Win32_Printer()
+            configured_names = [
+                settings.PRINTER_BW,
+                settings.PRINTER_BW_DUPLEX,
+                settings.PRINTER_COLOR,
+                settings.PRINTER_COLOR_DUPLEX
+            ]
+            
+            # For USB/Local printers, we check if at least one of our primary queues is ready
+            # Usually if one is connected/online, they all are since they share hardware.
             for p in printers:
-                # Look for 'USB' in PortName or Name
-                if "HP" in p.Name or "HP" in p.PortName:
-                    # Actually check if it's currently connected and ready
+                if p.Name in configured_names:
                     # Status code 3 = Idle (Online), 4 = Printing, 5 = WarminUp
                     if p.PrinterStatus in [3, 4, 5]:
                         return True

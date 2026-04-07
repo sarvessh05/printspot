@@ -18,9 +18,13 @@ class Settings(BaseSettings):
     KIOSK_TOKEN: str = os.getenv("KIOSK_TOKEN", "")
     
     # Printer Config
-    PRINTER_IP: str = os.getenv("PRINTER_IP", "")
-    TARGET_PRINTER: Optional[str] = os.getenv("TARGET_PRINTER", None)
-    MOCK_PRINTER: bool = os.getenv("MOCK_PRINTER", "True").lower() == "true"
+    PRINTER_IP: str = os.getenv("PRINTER_IP", "192.168.1.58")
+    PRINTER_BW: str = os.getenv("PRINTER_BW", "HP Officejet BW")
+    PRINTER_BW_DUPLEX: str = os.getenv("PRINTER_BW_DUPLEX", "HP Officejet BW Duplex")
+    PRINTER_COLOR: str = os.getenv("PRINTER_COLOR", "HP Officejet Color")
+    PRINTER_COLOR_DUPLEX: str = os.getenv("PRINTER_COLOR_DUPLEX", "HP Officejet Color Duplex")
+    
+    MOCK_PRINTER: bool = os.getenv("MOCK_PRINTER", "False").lower() == "true"
     
     # Admin Credentials
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "")

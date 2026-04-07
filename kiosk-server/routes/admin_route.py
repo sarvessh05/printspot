@@ -20,12 +20,14 @@ async def get_printer_status():
     # We maintain the "JAMMED" / "OFFLINE" / "NORMAL" string response
     return {"status": status_info["status"]}
 
-@router.get("/admin/reset-jam")
-async def reset_jam_state():
+@router.post("/admin/reset-jam")
+async def reset_jam_state(password: str = Body(..., embed=True)):
     """
     Forcefully overrides the JAMMED status to NORMAL.
-    Useful for clearing the kiosk lock screen remotely.
+    Requires admin password to prevent unauthorized kiosk unlocking.
     """
+    if password != settings.ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     printer_tracker.last_status = "NORMAL"
     logger.info("🛠️ Forcefully Reset JAM status to NORMAL via Admin Panel.")
     return {"success": True, "message": "Status reset to NORMAL"}

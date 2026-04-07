@@ -10,19 +10,23 @@ from routes.order_creation import router as order_creation_router
 from routes.settings import router as settings_router
 from routes.payments import router as payments_router
 
+# In dev: docs_url="/docs". In prod: None (disabled).
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    docs_url="/docs"
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url=None,
 )
 
-# CORS: Allow React Admin Panel to communicate
+# CORS — restricted to the configured origin (set ALLOWED_ORIGINS in .env for production)
+allowed_origins = settings.allowed_origins_list
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Tighten this in production!
+    allow_origins=allowed_origins,
+
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH"],
+    allow_headers=["Content-Type", "X-Admin-Password"],
 )
 
 # Register Routers

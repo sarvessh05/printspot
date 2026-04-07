@@ -16,6 +16,11 @@ env/
 instance/
 .pytest_cache/
 
+# Env files (all subdirectories)
+**/.env
+**/.env.local
+**/.env.production
+
 # React/Frontend
 dist/
 dist-ssr/
@@ -37,3 +42,9 @@ logs/
 
 # Supabase Local
 .supabase/
+
+# Dev scratch files
+1.txt
+*.txt
+flow_audit_report.md
+PrintSpot_Analysis_and_Tasks.md
