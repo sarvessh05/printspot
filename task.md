@@ -43,13 +43,23 @@ This document tracks the progress of the Modern Frontend Migration, Feature Impl
     - [x] Implement "All", "Odd", "Even", and "Custom Range" selection.
 - [x] **Double-Sided Logic:** Special pricing logic for Duplex prints (sheet-based vs page-based).
 
-## Phase 6: Kiosk Hardening & Reliability
-- [x] **Session Auto-Reset:** Implemented idle monitoring to protect user privacy.
-- [x] **Process Progress:** Added visual feedback during file processing and printing stages.
+## Phase 6: Kiosk Hardening & Reliability (Bug Fixes)
+- [ ] **Session Auto-Reset:** Implement a 60s idle timeout to clear sensitive user data and files.
+- [ ] **Process Progress bars:** Add visual feedback during the "Splitting PDF" and "Sending to Printer" phases.
+- [ ] **Subprocess Handler:** Update `print_engine.py` to handle concurrent spooling without blocking the main event loop.
+- [ ] **Maintenance Mode:** Implement an overlay if any of the 4 printers report "Offline" via `printer_status.py`.
 
 ## Phase 7: Remote & Local Kiosk Power Management
-- [x] **Admin Power Controls:** Remote shutdown/restart capability from the dashboard.
-- [x] **Hidden Operator Menu:** Secure maintenance menu for on-site staff.
+- [ ] **Windows Shutdown Utility:** Create a secure utility in `kiosk-server` to execute a clean system shutdown (`shutdown /s /f /t 10`).
+- [ ] **Admin Remote Trigger:**
+    - [ ] Add a "Power" tab/button in the Admin Dashboard to send shutdown signals.
+    - [ ] Implement a protected endpoint in `admin-backend` to broadcast the shutdown command via Supabase Realtime or WebSockets.
+- [ ] **Hidden Operator Menu (Kiosk UI):**
+    - [ ] Implement a hidden trigger gesture (e.g., 5-tap sequence or 3s long-press on the PrintSpot logo).
+    - [ ] Design a minimalist PIN-entry overlay for operator authentication.
+- [ ] **Local Admin Controls:**
+    - [ ] Add "Shutdown Machine" and "Restart Kiosk App" buttons within the hidden menu specifically for on-site maintenance.
+    - [ ] Add a safety confirmation modal to prevent accidental shutdowns.
 
 ---
 
