@@ -8,8 +8,11 @@ import LandingPage from "./pages/LandingPage";
 import UploadPage from "./pages/UploadPage";
 import ReviewPage from "./pages/ReviewPage";
 import PaymentPage from "./pages/PaymentPage";
+import SuccessPage from "./pages/SuccessPage";
 import KioskPage from "./pages/KioskPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import AboutUs from "./pages/AboutUs";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,8 +26,11 @@ const AnimatedRoutes = () => {
         <Route path="/upload" element={<UploadPage />} />
         <Route path="/review" element={<ReviewPage />} />
         <Route path="/payment" element={<PaymentPage />} />
+        <Route path="/success" element={<SuccessPage />} />
         <Route path="/kiosk" element={<KioskPage />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>

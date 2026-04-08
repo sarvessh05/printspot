@@ -73,21 +73,49 @@ async def print_jobs_endpoint(jobs: List[PrintJob]):
                 await cloud.revert_job(job.db_id)
                 continue
 
-            # Map settings correctly to what print_engine expects
+            # Map settings correctly
             options = {
                 "copies": int(job.copies) or 1,
-                "mode": job.mode,          # 'bw' or 'color'
+                "mode": job.mode,
                 "isTwoSided": job.isTwoSided,
+                "paperSize": job.paperSize,
             }
             
-            # Page range handling
+            # Page range handling for the whole job
             if job.printRange and job.printRange.lower() not in ["all", "all pages"]:
                 options["pages"] = job.printRange
-            elif job.totalPages:
-                options["pages"] = f"1-{job.totalPages}"
 
-            # PRINT COMMAND
-            success = await print_pdf(local_path, options)
+            # Mixed Color Handling
+            if job.mode == "mixed" and job.colorPages:
+                logger.info(f"🎨 [MIXED MODE] Splitting job {job.db_id} into BW and Color parts...")
+                from utils.pdf_processor import split_pdf_by_color
+                bw_path, color_path = await split_pdf_by_color(local_path, job.colorPages, temp_dir)
+                
+                # 1. Print Color Part
+                if color_path:
+                    color_options = options.copy()
+                    color_options["mode"] = "color"
+                    # Remove broad page range as we already split specific pages
+                    color_options.pop("pages", None) 
+                    logger.info(f"📤 Dispatching COLOR part...")
+                    await print_pdf(color_path, color_options)
+                    if color_path != local_path:
+                        color_path.unlink()
+
+                # 2. Print BW Part
+                if bw_path:
+                    bw_options = options.copy()
+                    bw_options["mode"] = "bw"
+                    bw_options.pop("pages", None)
+                    logger.info(f"📤 Dispatching BW part...")
+                    await print_pdf(bw_path, bw_options)
+                    if bw_path != local_path:
+                        bw_path.unlink()
+                
+                success = True # Assume success if both dispatched (better error handling could be added)
+            else:
+                # Standard single-mode print
+                success = await print_pdf(local_path, options)
             
             if success:
                 logger.info(f"[PRINT] Successfully sent {job.db_id} to printer.")

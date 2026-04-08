@@ -9,13 +9,19 @@ from .logger import get_logger
 logger = get_logger("print_engine")
 
 # Path to the bundled SumatraPDF or the system one
-# In a real environment, we'd bundle this alongside the server or point to it via PATH
-SUMATRA_EXE = settings.SUMATRA_PDF_PATH
+def _get_sumatra_path() -> str:
+    path = settings.SUMATRA_PDF_PATH
+    if os.path.exists(path):
+        return path
+    # Fallback to system PATH
+    logger.warning(f"⚠️ SumatraPDF not found at {path}. Falling back to system PATH.")
+    return "SumatraPDF.exe"
+
+SUMATRA_EXE = _get_sumatra_path()
 
 async def print_pdf(file_path: Path, options: Dict) -> bool:
     """
     Core engine that sends the command to the Windows printer.
-    Uses SumatraPDF CLI for robust, silent, headless printing.
     """
     logger.info(f"📄 Preparing print job: {file_path}")
     
@@ -28,38 +34,31 @@ async def print_pdf(file_path: Path, options: Dict) -> bool:
         logger.error(f"❌ File not found for printing: {file_path}")
         return False
 
-    # Extract user preferences from the PrintJob model
+    # Extract user preferences
     copies = int(options.get("copies", 1))
     mode = options.get("mode", "bw") # 'bw' or 'color'
     is_two_sided = options.get("isTwoSided", False)
-    # Mapping to SumatraPDF's duplex settings
+    paper_size = options.get("paperSize", "A4")
+    
+    # Mapping to SumatraPDF settings
     duplex = "duplexlong" if is_two_sided else "simplex"
-    # Mono chrome mapping for Sumatra
     monochrome = "monochrome" if mode == "bw" else "color"
 
     # Settings string for SumatraPDF -print-settings flag
-    # Format: "copies=1,duplexlong,monochrome,pages=1-10"
-    settings_str = f"copies={copies},{duplex},{monochrome},paper=A4,fit"
+    settings_str = f"copies={copies},{duplex},{monochrome},paper={paper_size},fit"
     
     # Add page ranges if specified (e.g. "1-5,7")
     page_range = options.get("pages")
     if page_range:
         settings_str += f",pages={page_range}"
     
-    # Determine correct printer name based on requirements
+    # Determine correct printer name
     if mode == "color":
-        if is_two_sided:
-            printer_name = settings.PRINTER_COLOR_DUPLEX
-        else:
-            printer_name = settings.PRINTER_COLOR
-    else: # default to bw
-        if is_two_sided:
-            printer_name = settings.PRINTER_BW_DUPLEX
-        else:
-            printer_name = settings.PRINTER_BW
+        printer_name = settings.PRINTER_COLOR_DUPLEX if is_two_sided else settings.PRINTER_COLOR
+    else:
+        printer_name = settings.PRINTER_BW_DUPLEX if is_two_sided else settings.PRINTER_BW
 
-    # SumatraPDF CLI - print-to command requires -print-to "Printer Name"
-    # Sumatra expects the flag then the quoted name
+    # SumatraPDF CLI command
     command = [
         f'"{SUMATRA_EXE}"',
         f'-print-to "{printer_name}"',

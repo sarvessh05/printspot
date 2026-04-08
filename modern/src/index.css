@@ -76,11 +76,11 @@
 
 @layer components {
   .glass {
-    @apply bg-white/60 backdrop-blur-xl border border-white/30 shadow-lg;
+    @apply bg-white/60 backdrop-blur-md border border-white/30 shadow-lg;
   }
 
   .glass-strong {
-    @apply bg-white/80 backdrop-blur-2xl border border-white/40 shadow-xl;
+    @apply bg-white/80 backdrop-blur-lg border border-white/40 shadow-xl;
   }
 
   .glow {

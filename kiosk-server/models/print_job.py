@@ -11,8 +11,10 @@ class PrintJob(BaseModel):
     downloadUrl: str = Field(..., description="Direct HTTPS link to the file in Supabase Storage")
     copies: int = Field(default=1, ge=1)
     mode: str = Field(default="bw", description="One of 'bw' or 'color'")
+    paperSize: str = Field(default="A4", description="A4, A3, or Letter")
     isTwoSided: bool = Field(default=False)
     printRange: str = Field(default="All Pages")
+    colorPages: Optional[str] = Field(default=None, description="Comma separated page numbers for mixed color, e.g. '1,3,5-7'")
     totalPages: int = Field(default=1, ge=1)
     
     # Optional metadata that might be provided from older integrations

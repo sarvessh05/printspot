@@ -1,15 +1,23 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { PageTransition } from "@/components/PageTransition";
-import { useState, useCallback } from "react";
-import { Upload, FileText, X, ArrowRight, ArrowLeft, Shield, Zap, Lock, Cloud } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { Upload, FileText, X, ArrowRight, ArrowLeft, Shield, Zap, Lock, Cloud, Clock, Copy } from "lucide-react";
 import { GlowButton } from "@/components/GlowButton";
 import { AnimatedCounter } from "@/components/AnimatedCounter";
+import { countPagesFast, convertImageToPdf } from "@/lib/pdf-utils";
+import { toast } from "sonner";
 
 interface UploadedFile {
+  id: string;
   name: string;
   size: number;
   pages: number;
+  fileObj: File;
+  mode: "bw" | "color";
+  copies: number;
+  isTwoSided: boolean;
+  originalPageCount: number;
 }
 
 const floatingShapes = [
@@ -46,18 +54,58 @@ const UploadPage = () => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isAbsorbing, setIsAbsorbing] = useState(false);
+  const [pricing, setPricing] = useState({ bw: 2, color: 10, double_sided_discount: 0 });
+  const [recentOtps, setRecentOtps] = useState<any[]>([]);
 
-  const handleFiles = useCallback((fileList: FileList) => {
+  useEffect(() => {
+    // Ported from legacy: Fetch pricing
+    const backendUrl = import.meta.env.VITE_EC2_IP || 'http://localhost:8080';
+    fetch(`${backendUrl}/api/settings/pricing`)
+      .then(res => res.json())
+      .then(data => setPricing(data))
+      .catch(err => console.log("Pricing fetch error", err));
+    
+    const otps = JSON.parse(localStorage.getItem('saved_print_otps') || '[]');
+    setRecentOtps(otps);
+  }, []);
+
+  const handleFiles = useCallback(async (fileList: FileList) => {
     setIsAbsorbing(true);
-    setTimeout(() => {
-      const newFiles = Array.from(fileList).map((f) => ({
-        name: f.name,
-        size: f.size,
-        pages: Math.floor(Math.random() * 20) + 1,
-      }));
-      setFiles((prev) => [...prev, ...newFiles]);
-      setIsAbsorbing(false);
-    }, 800);
+    const processedFiles: UploadedFile[] = [];
+    
+    for (const f of Array.from(fileList)) {
+      if (f.size > 50 * 1024 * 1024) continue; // 50MB limit
+
+      let finalFile = f;
+      let pageCount = 1;
+
+      if (f.type === 'application/pdf') {
+        pageCount = await countPagesFast(f);
+      } else if (f.type.startsWith('image/')) {
+        try {
+          finalFile = await convertImageToPdf(f);
+          pageCount = 1;
+        } catch (err) {
+          console.error("Image processing error", err);
+          continue;
+        }
+      }
+
+      processedFiles.push({
+        id: Math.random().toString(36).substring(7),
+        name: finalFile.name,
+        size: finalFile.size,
+        pages: pageCount,
+        fileObj: finalFile,
+        mode: "bw",
+        copies: 1,
+        isTwoSided: false,
+        originalPageCount: pageCount
+      });
+    }
+
+    setFiles((prev) => [...prev, ...processedFiles]);
+    setIsAbsorbing(false);
   }, []);
 
   const handleDrop = useCallback(
@@ -319,10 +367,48 @@ const UploadPage = () => {
                   {" · "}
                   <AnimatedCounter value={totalPages} className="font-semibold text-primary" /> pages total
                 </div>
-                <GlowButton onClick={() => navigate("/review", { state: { files } })} size="lg">
+                <GlowButton onClick={() => navigate("/review", { state: { files, pricing } })} size="lg">
                   Continue <ArrowRight className="w-4 h-4 inline ml-1" />
                 </GlowButton>
               </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Recent Prints - Ported from legacy */}
+        <AnimatePresence>
+          {recentOtps.length > 0 && files.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-12 glass-strong rounded-3xl p-6 relative overflow-hidden"
+            >
+              <div className="flex items-center gap-2 text-sm font-semibold text-primary mb-4">
+                <Clock className="w-4 h-4" />
+                Recent Prints
+              </div>
+              <div className="space-y-3">
+                {recentOtps.slice(0, 3).map((item, idx) => (
+                  <div key={idx} className="flex justify-between align-items-center p-3 glass rounded-xl border border-primary/5 hover:border-primary/20 transition-colors">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-foreground truncate max-w-[200px]">{item.fileName}</span>
+                      <span className="text-[10px] text-muted-foreground">{item.date}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                       <span className="text-xs font-bold text-primary tracking-wider">{item.otp}</span>
+                       <button 
+                         onClick={() => {
+                           navigator.clipboard.writeText(item.otp);
+                           toast.success("OTP Copied!");
+                         }}
+                         className="p-1.5 hover:bg-primary/10 rounded-lg text-primary transition-colors"
+                       >
+                         <Copy className="w-3.5 h-3.5" />
+                       </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

@@ -4,8 +4,10 @@ import { PageTransition } from "@/components/PageTransition";
 import { Particles } from "@/components/Particles";
 import { GlowButton } from "@/components/GlowButton";
 import { Printer, Zap, Shield, Clock } from "lucide-react";
+import { Footer } from "@/components/Footer";
 
 const features = [
+
   { icon: Zap, title: "Instant Printing", desc: "Upload and print in under 60 seconds" },
   { icon: Shield, title: "Secure & Private", desc: "Files are deleted after printing" },
   { icon: Clock, title: "24/7 Available", desc: "Print anytime at any kiosk" },
@@ -25,12 +27,13 @@ const LandingPage = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-2"
+            className="flex items-center"
           >
-            <div className="w-10 h-10 rounded-xl gradient-hero flex items-center justify-center">
-              <Printer className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="font-display font-bold text-xl text-foreground">PrintSpot</span>
+            <img 
+              src="/logo.jpg" 
+              alt="PrintSpot Logo" 
+              className="h-12 w-auto object-contain hover:scale-105 transition-transform duration-300" 
+            />
           </motion.div>
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -111,8 +114,11 @@ const LandingPage = () => {
             ))}
           </div>
         </section>
+
+        <Footer />
       </div>
     </PageTransition>
+
   );
 };
 

@@ -45,10 +45,10 @@ echo ✅ DEPENDENCIES VERIFIED! STARTING SERVICES...
 echo ===============================================
 
 :: Launching in separate windows
-start "Cloud API [8083]" cmd /k "cd admin-backend && .\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 8083"
+start "Cloud API [8083]" cmd /k "cd admin-backend ; .\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 8083"
 start "Hardware Kiosk [5000]" cmd /k "cd kiosk-server ; .\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 5000"
-start "Kiosk UI [5173]" cmd /k "cd frontend && npm run dev -- --port 5173"
-start "Admin Panel [5174]" cmd /k "cd admin-frontend && npm run dev -- --port 5174"
+start "Kiosk UI [5173]" cmd /k "cd frontend ; npm run dev -- --port 5173"
+start "Admin Panel [5174]" cmd /k "cd admin-frontend ; npm run dev -- --port 5174"
 
 echo =====================================
 echo [*] Kiosk UI: http://localhost:5173/kiosk
