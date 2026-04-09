@@ -70,15 +70,32 @@ const UploadPage = () => {
   }, []);
 
   const handleFiles = useCallback(async (fileList: FileList) => {
+    const SESSION_LIMIT = 50 * 1024 * 1024; // 50MB Total Session Limit
+    
     if (files.length + fileList.length > 30) {
-      toast.error("Maximum 30 documents allowed per session to prevent system lag.");
+      toast.error("Maximum 30 documents allowed per session.");
       return;
     }
+
     setIsAbsorbing(true);
     const processedFiles: UploadedFile[] = [];
+    let currentSessionSize = files.reduce((acc, f) => acc + f.size, 0);
     
     for (const f of Array.from(fileList)) {
-      if (f.size > 50 * 1024 * 1024) continue; // 50MB limit
+      // 1. Duplicate check (Name & Size)
+      const isDuplicate = files.some(existing => existing.name === f.name && existing.size === f.size) ||
+                         processedFiles.some(p => p.name === f.name && p.size === f.size);
+      
+      if (isDuplicate) {
+        toast.warning(`"${f.name}" is already in your selection.`);
+        continue;
+      }
+
+      // 2. Session Size Limit check
+      if (currentSessionSize + f.size > SESSION_LIMIT) {
+        toast.error(`"${f.name}" exceeds session capacity. Total limit is 50MB.`);
+        break; // Stop processing further files if limit reached
+      }
 
       let finalFile = f;
       let pageCount = 1;
@@ -106,11 +123,15 @@ const UploadPage = () => {
         isTwoSided: false,
         originalPageCount: pageCount
       });
+
+      currentSessionSize += finalFile.size;
     }
 
-    setFiles((prev) => [...prev, ...processedFiles]);
+    if (processedFiles.length > 0) {
+      setFiles((prev) => [...prev, ...processedFiles]);
+    }
     setIsAbsorbing(false);
-  }, []);
+  }, [files]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {

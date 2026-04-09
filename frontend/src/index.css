@@ -1,224 +1,141 @@
-/* =========================================
-   PrintKro / The Print Spot — Global Design System
-   Brand: Sky-Blue (#0ea5e9) on White/Light-Blue
-   Applies to: ALL pages (Landing, Upload, Review, Success, Kiosk)
-   ========================================= */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
-/* --- Fonts --- */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* --- CSS Variables (Design Tokens) --- */
-:root {
-  --brand-primary: #0ea5e9;
-  --brand-primary-dark: #0284c7;
-  --brand-primary-glow: rgba(14, 165, 233, 0.4);
-  --brand-primary-soft: rgba(14, 165, 233, 0.1);
-  --brand-primary-border: rgba(14, 165, 233, 0.25);
+@layer base {
+  :root {
+    --background: 220 30% 97%;
+    --foreground: 222 47% 11%;
 
-  --bg-page: #f0f9ff;
-  --bg-card: #ffffff;
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-  --shadow-card: 0 4px 24px rgba(14, 165, 233, 0.08), 0 1px 4px rgba(0,0,0,0.06);
-  --shadow-btn: 0 4px 12px rgba(14, 165, 233, 0.35);
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-  --border-radius-card: 1.25rem; /* 20px */
-  --border-radius-btn: 50px;
-  --transition: all 0.25s ease;
-}
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
 
-/* --- Global Reset --- */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
+    --primary-glow: 221 90% 60%;
+    --primary-deep: 224 76% 35%;
 
-html, body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: var(--bg-page);
-  color: var(--text-primary);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 222 47% 11%;
 
-/* --- Page Wrapper (all pages use min-vh-100) --- */
-.page-wrapper {
-  min-height: 100vh;
-  background-color: var(--bg-page);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem 1rem;
-}
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-/* --- Brand Card (shared card style) --- */
-.brand-card {
-  background: var(--bg-card);
-  border: none;
-  border-radius: var(--border-radius-card);
-  box-shadow: var(--shadow-card);
-  padding: 2rem;
-  width: 100%;
+    --accent: 210 100% 96%;
+    --accent-foreground: 221 83% 53%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
+
+    --radius: 0.75rem;
+
+    --glass-bg: 220 60% 99% / 0.6;
+    --glass-border: 220 60% 90% / 0.3;
+    --glow-color: 221 83% 53% / 0.25;
+    --glow-strong: 221 83% 53% / 0.5;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 100% 96%;
+    --sidebar-accent-foreground: 221 83% 53%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 221 83% 53%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+  }
 }
 
-/* --- Brand Button --- */
-.btn-brand {
-  background-color: var(--brand-primary);
-  color: #ffffff;
-  border: none;
-  border-radius: var(--border-radius-btn);
-  font-weight: 700;
-  font-family: 'Inter', sans-serif;
-  padding: 0.75rem 1.75rem;
-  transition: var(--transition);
-  cursor: pointer;
-}
-.btn-brand:hover, .btn-brand:focus {
-  background-color: var(--brand-primary-dark);
-  color: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-btn);
-  outline: none;
-}
-.btn-brand:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
 }
 
-.btn-brand-outline {
-  background: transparent;
-  color: var(--brand-primary);
-  border: 2px solid var(--brand-primary);
-  border-radius: var(--border-radius-btn);
-  font-weight: 700;
-  font-family: 'Inter', sans-serif;
-  padding: 0.75rem 1.75rem;
-  transition: var(--transition);
-  cursor: pointer;
-}
-.btn-brand-outline:hover {
-  background-color: var(--brand-primary-soft);
-  color: var(--brand-primary);
+@layer components {
+  .glass {
+    @apply bg-white/60 backdrop-blur-md border border-white/30 shadow-lg;
+  }
+
+  .glass-strong {
+    @apply bg-white/80 backdrop-blur-lg border border-white/40 shadow-xl;
+  }
+
+  .glow {
+    box-shadow: 0 0 30px hsl(var(--glow-color)),
+                0 0 60px hsl(var(--glow-color));
+  }
+
+  .glow-strong {
+    box-shadow: 0 0 40px hsl(var(--glow-strong)),
+                0 0 80px hsl(var(--glow-color)),
+                0 0 120px hsl(221 83% 53% / 0.15);
+  }
+
+  .glow-text {
+    text-shadow: 0 0 20px hsl(var(--glow-color)),
+                 0 0 40px hsl(221 83% 53% / 0.15);
+  }
+
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary to-blue-400;
+  }
+
+  .gradient-hero {
+    background: linear-gradient(135deg, hsl(221 83% 53%), hsl(210 100% 65%), hsl(199 89% 48%));
+  }
+
+  .gradient-mesh {
+    background:
+      radial-gradient(ellipse at 20% 50%, hsl(221 83% 53% / 0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, hsl(199 89% 48% / 0.1) 0%, transparent 50%),
+      radial-gradient(ellipse at 60% 80%, hsl(210 100% 65% / 0.08) 0%, transparent 50%);
+  }
+
+  .neumorphic {
+    @apply bg-white rounded-2xl;
+    box-shadow: 8px 8px 16px hsl(220 30% 90%),
+                -8px -8px 16px hsl(0 0% 100%);
+  }
+
+  .neumorphic-inset {
+    @apply bg-background rounded-2xl;
+    box-shadow: inset 4px 4px 8px hsl(220 30% 90%),
+                inset -4px -4px 8px hsl(0 0% 100%);
+  }
 }
 
-/* --- Brand Logo Ring --- */
-.brand-logo {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  border: 2px solid var(--brand-primary-border);
-  object-fit: cover;
-  padding: 4px;
-}
-
-/* --- Navbar --- */
-.brand-navbar {
-  background: #ffffff;
-  box-shadow: 0 1px 12px rgba(14, 165, 233, 0.08);
-  padding: 0.75rem 1.5rem;
-}
-.brand-navbar .navbar-brand {
-  font-weight: 800;
-  font-size: 1.35rem;
-  color: var(--brand-primary);
-  text-decoration: none;
-}
-
-/* --- OTP Display Box --- */
-.otp-display-box {
-  background: var(--brand-primary-soft);
-  border: 1.5px solid var(--brand-primary-border);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  text-align: center;
-}
-.otp-display-box .otp-label {
-  color: var(--brand-primary);
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.otp-display-box .otp-code {
-  font-size: 3rem;
-  font-weight: 800;
-  letter-spacing: 12px;
-  color: var(--brand-primary);
-}
-
-/* --- Status / Alert Area --- */
-.status-banner {
-  border-radius: 0.75rem;
-  padding: 1rem 1.25rem;
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-.status-banner.error { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
-.status-banner.success { background: #f0fdf4; color: #15803d; border: 1px solid #86efac; }
-.status-banner.warning { background: #fffbeb; color: #b45309; border: 1px solid #fcd34d; }
-.status-banner.info { background: var(--brand-primary-soft); color: var(--brand-primary-dark); border: 1px solid var(--brand-primary-border); }
-
-/* --- Kiosk Numpad --- */
-.numpad-key {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  border: 2px solid var(--brand-primary-border);
-  background: #ffffff;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: var(--transition);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-}
-.numpad-key:hover {
-  background: var(--brand-primary-soft);
-  border-color: var(--brand-primary);
-  color: var(--brand-primary);
-  transform: scale(1.08);
-}
-.numpad-key:active {
-  transform: scale(0.96);
-}
-
-/* --- Upload Drop Zone --- */
-.upload-dropzone {
-  border: 2px dashed #cbd5e1;
-  border-radius: 1rem;
-  background: #f8fafc;
-  cursor: pointer;
-  transition: var(--transition);
-  padding: 2rem;
-  text-align: center;
-}
-.upload-dropzone:hover {
-  border-color: var(--brand-primary);
-  background: var(--brand-primary-soft);
-}
-
-/* --- Spinner (override Bootstrap spin) --- */
-.fa-spin { animation: fa-spin 1s linear infinite; }
-@keyframes fa-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* --- Utility: Text Brand Color --- */
-.text-brand { color: var(--brand-primary) !important; }
-
-/* --- Responsive Tweaks --- */
-@media (max-width: 576px) {
-  .brand-card { padding: 1.25rem; }
-  .otp-display-box .otp-code { font-size: 2.25rem; letter-spacing: 8px; }
-  .numpad-key { width: 68px; height: 68px; font-size: 1.25rem; }
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent gradient-hero;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }

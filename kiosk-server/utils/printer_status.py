@@ -12,7 +12,7 @@ from pysnmp.hlapi.asyncio import (
     ContextData,
     ObjectType,
     ObjectIdentity,
-    getCmd
+    get_cmd
 )
 
 logger = get_logger("printer_status")
@@ -87,7 +87,7 @@ class PrinterStatusTracker:
         try:
             # SNMP GET request for hrDeviceStatus
             snmp_engine = SnmpEngine()
-            iterator = await getCmd(
+            iterator = await get_cmd(
                 snmp_engine,
                 CommunityData("public", mpModel=0),
                 await UdpTransportTarget.create((settings.PRINTER_IP, 161), timeout=2.0, retries=1),

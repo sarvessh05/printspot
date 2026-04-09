@@ -3,8 +3,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { PageTransition } from "@/components/PageTransition";
 import { GlowButton } from "@/components/GlowButton";
 import { AnimatedCounter } from "@/components/AnimatedCounter";
-import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, FileText, Minus, Plus, CreditCard, Layers, Palette, Copy as CopyIcon, ScanText } from "lucide-react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { ArrowLeft, FileText, Minus, Plus, CreditCard, Layers, Palette, Copy as CopyIcon, ScanText, Loader2 } from "lucide-react";
+import * as pdfjs from 'pdfjs-dist';
+
+// Robust worker configuration for Vite
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface UploadedFile {
   id: string;
@@ -21,6 +26,113 @@ interface UploadedFile {
   colorPagesString: string;
   paperSize: "a4" | "letter";
 }
+
+const PDFThumbnail = ({ file }: { file: File }) => {
+  const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    let mainUrl: string | null = null;
+
+    const generateThumbnail = async () => {
+      try {
+        if (!file || !(file instanceof File)) {
+          console.error("Invalid file object", file);
+          setError(true);
+          setLoading(false);
+          return;
+        }
+
+        // Handle images
+        if (file.type && file.type.startsWith('image/')) {
+          mainUrl = URL.createObjectURL(file);
+          if (isMounted) {
+            setThumbnail(mainUrl);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Handle PDFs
+        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+        if (!isPdf) {
+          if (isMounted) setLoading(false);
+          return;
+        }
+
+        mainUrl = URL.createObjectURL(file);
+        
+        const loadingTask = pdfjs.getDocument({
+          url: mainUrl,
+          cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.6.205/cmaps/',
+          cMapPacked: true,
+        });
+        
+        const pdf = await loadingTask.promise;
+        const page = await pdf.getPage(1);
+        
+        const viewport = page.getViewport({ scale: 1.0 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        
+        if (!context) throw new Error("Could not get canvas context");
+        
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        await page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise;
+        
+        if (isMounted) {
+          setThumbnail(canvas.toDataURL('image/jpeg', 0.8));
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Thumbnail rendering failed:", err);
+        if (isMounted) {
+          setError(true);
+          setLoading(false);
+        }
+      }
+    };
+
+    generateThumbnail();
+    
+    return () => { 
+      isMounted = false; 
+      if (mainUrl) URL.revokeObjectURL(mainUrl);
+    };
+  }, [file]);
+
+  return (
+    <div className="w-full aspect-[3/4] bg-white dark:bg-slate-900 rounded-2xl overflow-hidden flex items-center justify-center relative border border-slate-200 dark:border-slate-800 shadow-xl group-hover:scale-[1.05] transition-all duration-500 ring-1 ring-slate-900/5">
+      {loading ? (
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+          <span className="text-[8px] font-black text-slate-400 animate-pulse tracking-tighter">GENERATING...</span>
+        </div>
+      ) : thumbnail ? (
+        <motion.img 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          src={thumbnail} 
+          alt="Preview" 
+          className="w-full h-full object-cover" 
+        />
+      ) : (
+        <div className="flex flex-col items-center gap-2 text-slate-300 dark:text-slate-700">
+          <FileText className="w-10 h-10 opacity-30" />
+          <span className="text-[8px] font-black uppercase tracking-widest">{error ? 'No Preview' : 'PDF File'}</span>
+        </div>
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
+    </div>
+  );
+};
 
 const SlidingToggle = ({ options, value, onChange, id }: { options: string[], value: string, onChange: (v: any) => void, id: string }) => (
   <div className="bg-slate-100 dark:bg-slate-800/50 rounded-xl p-1 flex relative gap-1 border border-slate-200 dark:border-slate-700 w-full">
@@ -180,40 +292,46 @@ const ReviewPage = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-8 w-full flex-grow pb-48">
-        <div className="flex overflow-x-auto gap-8 pb-12 snap-x snap-mandatory no-scrollbar -mx-4 px-4 h-full items-start">
+       <div className="max-w-6xl mx-auto px-6 py-8 w-full flex-grow pb-48 overflow-hidden">
+        <div className={`flex overflow-x-auto gap-8 pb-12 snap-x snap-mandatory no-scrollbar px-[calc(50%-170px)] md:px-[calc(50%-250px)] h-full items-start ${files.length === 1 ? 'justify-center' : ''}`}>
           {files.map((file, idx) => (
             <motion.div
               key={file.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: idx * 0.1 }}
-              className="min-w-[85vw] md:min-w-[500px] snap-center flex-shrink-0 bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800 overflow-hidden"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -5 }}
+              className="min-w-[320px] md:min-w-[500px] snap-center flex-shrink-0 bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800 overflow-hidden group transition-all duration-500"
             >
-              {/* File Info Title Bar */}
-              <div className="bg-slate-50/50 dark:bg-slate-800/20 px-8 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/40">
-                    <FileText className="w-6 h-6 text-white" />
+              {/* Preview & File Info Header */}
+              <div className="p-6 md:p-8 pb-0">
+                <div className="flex gap-4 md:gap-6 items-start">
+                  {/* PDF Preview */}
+                  <div className="w-24 md:w-32 flex-shrink-0">
+                    <PDFThumbnail file={file.fileObj} />
                   </div>
-                  <div className="max-w-[180px] md:max-w-[300px]">
-                    <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 truncate">{file.name}</h3>
-                    <div className="flex items-center gap-2 mt-0.5">
-                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                        {file.pages} PGS
+                  
+                  <div className="flex-grow pt-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-[9px] md:text-[10px] font-black text-blue-600 uppercase tracking-widest">Doc #{idx + 1}</div>
+                      <div className="text-[9px] md:text-[10px] font-black text-slate-300 dark:text-slate-700 px-2 py-0.5 border border-slate-100 dark:border-slate-800 rounded-full uppercase">
+                        {file.pages} Pgs
+                      </div>
+                    </div>
+                    <h3 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-200 line-clamp-1 md:line-clamp-2 leading-tight mb-2 tracking-tight">{file.name}</h3>
+                    <div className="flex items-center gap-2">
+                       <span className="text-xl md:text-2xl font-black text-slate-900 dark:text-white">₹{calculateFileCost(file)}</span>
+                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md">
+                        GST INCL.
                        </span>
-                       <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">₹{calculateFileCost(file)}</span>
                     </div>
                   </div>
-                </div>
-                <div className="text-[10px] font-black text-slate-300 dark:text-slate-700 px-3 py-1 border-2 border-slate-100 dark:border-slate-800 rounded-full">
-                  #{idx + 1}
                 </div>
               </div>
 
               {/* Settings Grid */}
-              <div className="p-8 space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="p-6 md:p-8 space-y-6 md:y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                   {/* Color Mode */}
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -233,29 +351,22 @@ const ReviewPage = () => {
                           exit={{ height: 0, opacity: 0 }}
                           className="pt-2"
                         >
-                          <input 
-                            type="text"
-                            placeholder="Color pages (e.g. 1, 3-5)"
-                            value={file.colorPagesString}
-                            onChange={(e) => updateFileSetting(file.id, 'colorPagesString', e.target.value)}
-                            className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl py-2 px-3 text-[10px] font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                          />
+                          <div className="flex flex-col gap-2">
+                            <input 
+                              type="text"
+                              placeholder="Color pages (e.g. 1, 3-5)"
+                              value={file.colorPagesString}
+                              onChange={(e) => updateFileSetting(file.id, 'colorPagesString', e.target.value)}
+                              className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl py-2 px-3 text-[10px] font-bold focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                            />
+                            <p className="text-[8px] font-extrabold text-red-500 flex items-center gap-1 animate-pulse leading-none px-1">
+                              <span className="w-1 h-1 rounded-full bg-red-500" />
+                              NOTE: REST PAGES WILL BE B&W
+                            </p>
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </div>
-
-                  {/* Paper Size */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                       <ScanText className="w-3 h-3 text-blue-500" /> Paper Size
-                    </label>
-                    <SlidingToggle 
-                      id={`paper-${file.id}`}
-                      options={["A4", "Letter"]} 
-                      value={file.paperSize} 
-                      onChange={(v) => updateFileSetting(file.id, 'paperSize', v)} 
-                    />
                   </div>
 
                   {/* Copies */}
@@ -263,7 +374,7 @@ const ReviewPage = () => {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
                        <CopyIcon className="w-3 h-3 text-blue-500" /> Quantity
                     </label>
-                    <div className="bg-slate-100 dark:bg-slate-800/50 rounded-xl p-1 flex items-center justify-between border border-slate-200 dark:border-slate-700">
+                    <div className="bg-slate-100 dark:bg-slate-800/50 rounded-xl p-1 flex items-center justify-between border border-slate-200 dark:border-slate-700 h-[42px]">
                       <button 
                         onClick={() => updateFileSetting(file.id, 'copies', Math.max(1, file.copies - 1))}
                         className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:bg-white dark:hover:bg-slate-700 transition-all hover:text-blue-600"
@@ -281,7 +392,7 @@ const ReviewPage = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                    {/* Two Sided */}
                    <div className="space-y-3">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -289,7 +400,7 @@ const ReviewPage = () => {
                     </label>
                     <button 
                       onClick={() => updateFileSetting(file.id, 'isTwoSided', !file.isTwoSided)}
-                      className={`w-full flex items-center justify-between px-5 py-3 rounded-xl border transition-all duration-300 ${
+                      className={`w-full flex items-center justify-between px-5 py-2.5 rounded-xl border transition-all duration-300 ${
                         file.isTwoSided 
                           ? "bg-blue-600/5 border-blue-600/20 text-blue-600 ring-2 ring-blue-600/10" 
                           : "bg-slate-100 border-slate-200 dark:bg-slate-800/50 dark:border-slate-700 text-slate-500"
@@ -313,7 +424,7 @@ const ReviewPage = () => {
                     <div className="flex flex-col gap-2">
                       <SlidingToggle 
                         id={`range-${file.id}`}
-                        options={["All", "Odd", "Even", "Custom"]} 
+                        options={["All", "Custom"]} 
                         value={file.printRange} 
                         onChange={(v) => updateFileSetting(file.id, 'printRange', v)} 
                       />
@@ -330,7 +441,7 @@ const ReviewPage = () => {
                               placeholder="e.g. 1-5, 8, 10-12"
                               value={file.customRangeString}
                               onChange={(e) => updateFileSetting(file.id, 'customRangeString', e.target.value)}
-                              className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl py-3 px-4 text-xs font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400"
+                              className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl py-2.5 px-4 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400"
                             />
                           </motion.div>
                         )}
