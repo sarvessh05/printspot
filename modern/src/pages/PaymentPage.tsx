@@ -9,114 +9,163 @@ import { toast } from "sonner";
 
 const OTP_LENGTH = 6;
 
+// Add this declaration at the top level
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 const PaymentPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { total = 0, files = [] } = location.state || {};
   
   const [step, setStep] = useState<"pay" | "processing" | "otp" | "success">("pay");
-  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
-  const [revealedDigits, setRevealedDigits] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("Initializing...");
   const [realOtp, setRealOtp] = useState("");
-  
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [revealedDigits, setRevealedDigits] = useState(0);
+
+  const loadRazorpay = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
 
   const handlePay = async () => {
-    // In Phase 1, we simulate Razorpay success but do REAL backend work
-    setStep("processing");
-    setLoadingMessage("Securing transaction...");
+    setLoadingMessage("Initializing Razorpay...");
     
     try {
       const backendUrl = import.meta.env.VITE_EC2_IP || 'http://localhost:8080';
-      
-      // 1. Upload files to Supabase
-      setLoadingMessage("Uploading documents to vault...");
-      const orderResults = [];
-      
-      for (const fileItem of files) {
-        const cleanFileName = fileItem.name.replace(/[\n\r]/g, '').replace(/[^a-zA-Z0-9.\-_]/g, '_');
-        const uniqueName = `${Date.now()}_${cleanFileName}`;
+      const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
-        const { error: uploadError } = await supabase.storage.from('pdfs').upload(uniqueName, fileItem.fileObj);
-        if (uploadError) throw uploadError;
-
-        const { data: publicUrlData } = supabase.storage.from('pdfs').getPublicUrl(uniqueName);
-
-        orderResults.push({
-          file_name: cleanFileName,
-          file_url: publicUrlData.publicUrl,
-          copies: parseInt(fileItem.copies),
-          mode: fileItem.mode,
-          is_two_sided: fileItem.isTwoSided,
-          print_range: fileItem.printRange === 'all' ? 'All Pages' : fileItem.customRangeString,
-          total_pages: parseInt(fileItem.pages),
-          total_amount: Math.round(total / files.length), // Simplified for now
-          unique_name: uniqueName
-        });
+      // 1. Load Razorpay Script
+      const isLoaded = await loadRazorpay();
+      if (!isLoaded) {
+        toast.error("Razorpay SDK failed to load. Are you online?");
+        return;
       }
 
-      // 2. Create batch order
-      setLoadingMessage("Generating your OTP...");
-      const response = await fetch(`${backendUrl}/api/orders/create-batch`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: orderResults,
-          razorpay_order_id: "simulated_" + Date.now(),
-          razorpay_payment_id: "simulated_pay_" + Date.now(),
-          razorpay_signature: "simulated_sig",
-          total_grand_amount: Math.round(total)
-        })
+      // 2. Create Order on Backend
+      const orderResponse = await fetch(`${backendUrl}/api/payments/create-order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: total }),
       });
+      const rzpOrder = await orderResponse.json();
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || "Server error");
+      if (!orderResponse.ok) throw new Error(rzpOrder.detail || "Failed to create order");
 
-      setRealOtp(data.otp);
-      setStep("otp");
-      
-      // Animate OTP reveal
-      let i = 0;
-      const interval = setInterval(() => {
-        i++;
-        setRevealedDigits(i);
-        if (i >= OTP_LENGTH) clearInterval(interval);
-      }, 150);
+      // 3. Open Razorpay Checkout
+      const options = {
+        key: razorpayKey,
+        amount: rzpOrder.amount,
+        currency: rzpOrder.currency,
+        name: "PrintSpot Kiosk",
+        description: `Payment for ${files.length} documents`,
+        order_id: rzpOrder.id,
+        handler: async (response: any) => {
+          setStep("processing");
+          setLoadingMessage("Verifying payment...");
+          
+          try {
+            // 4. Upload files to Supabase upon successful payment
+            setLoadingMessage("Securing your documents...");
+            const orderResults = [];
+            
+            for (const fileItem of files) {
+              const cleanFileName = fileItem.name.replace(/[\n\r]/g, '').replace(/[^a-zA-Z0-9.\-_]/g, '_');
+              const uniqueName = `${Date.now()}_${cleanFileName}`;
+
+              const { error: uploadError } = await supabase.storage.from('pdfs').upload(uniqueName, fileItem.fileObj);
+              if (uploadError) throw uploadError;
+
+              const { data: publicUrlData } = supabase.storage.from('pdfs').getPublicUrl(uniqueName);
+
+              orderResults.push({
+                file_name: cleanFileName,
+                file_url: publicUrlData.publicUrl,
+                copies: parseInt(fileItem.copies),
+                mode: fileItem.mode,
+                is_two_sided: fileItem.isTwoSided,
+                print_range: fileItem.printRange === 'all' ? 'All Pages' : fileItem.customRangeString,
+                total_pages: parseInt(fileItem.pages),
+                total_amount: Math.round(total / files.length),
+                unique_name: uniqueName,
+                color_pages: fileItem.colorPagesString,
+                paper_size: fileItem.paperSize || "a4"
+              });
+            }
+
+            // 5. Create batch order on backend (which verifies signature)
+            setLoadingMessage("Finalizing order...");
+            const batchResponse = await fetch(`${backendUrl}/api/orders/create-batch`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                items: orderResults,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                total_grand_amount: Math.round(total)
+              })
+            });
+
+            const data = await batchResponse.json();
+            if (!batchResponse.ok) throw new Error(data.detail || "Verification failed");
+
+            setRealOtp(data.otp);
+            setStep("otp");
+            
+            // Animate OTP reveal
+            let i = 0;
+            const interval = setInterval(() => {
+              i++;
+              setRevealedDigits(i);
+              if (i >= OTP_LENGTH) clearInterval(interval);
+            }, 150);
+
+          } catch (verifyErr: any) {
+            console.error(verifyErr);
+            toast.error(verifyErr.message || "Finalization failed. Contact support with Payment ID: " + response.razorpay_payment_id);
+            setStep("pay");
+          }
+        },
+        prefill: {
+          name: "Kiosk User",
+          email: "kiosk@printspot.com",
+          contact: "9999999999",
+        },
+        theme: {
+          color: "#6366f1",
+        },
+      };
+
+      const rzp1 = new window.Razorpay(options);
+      rzp1.on('payment.failed', function (response: any) {
+        toast.error("Payment failed: " + response.error.description);
+      });
+      rzp1.open();
 
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "Something went wrong");
+      toast.error(err.message || "Something went wrong initializing payment");
       setStep("pay");
     }
   };
 
-  const handleOtpChange = (idx: number, val: string) => {
-    if (!/^\d?$/.test(val)) return;
-    const next = [...otp];
-    next[idx] = val;
-    setOtp(next);
-    if (val && idx < OTP_LENGTH - 1) inputRefs.current[idx + 1]?.focus();
-  };
-
-  const handleKeyDown = (idx: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !otp[idx] && idx > 0) inputRefs.current[idx - 1]?.focus();
-  };
-
-  const verifyOtp = () => {
-    if (otp.join("") === realOtp) {
-      setStep("success");
-      setTimeout(() => navigate("/success", { state: { otp: realOtp, fileName: `${files.length} Documents` } }), 1500);
-    } else {
-       toast.error("Incorrect code. Please try again.");
-       setOtp(Array(OTP_LENGTH).fill(""));
-       inputRefs.current[0]?.focus();
-    }
-  };
-
   useEffect(() => {
-    if (otp.every((d) => d !== "") && step === "otp") verifyOtp();
-  }, [otp, step]);
+    if (step === "success") {
+      const timer = setTimeout(() => {
+        navigate("/success", { state: { otp: realOtp } });
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [step, navigate, realOtp]);
 
   return (
     <PageTransition className="min-h-screen gradient-mesh flex items-center justify-center">
@@ -150,10 +199,23 @@ const PaymentPage = () => {
             <motion.div
               animate={{ boxShadow: ["0 0 20px hsl(var(--primary) / 0.1)", "0 0 40px hsl(var(--primary) / 0.2)", "0 0 20px hsl(var(--primary) / 0.1)"] }}
               transition={{ duration: 2, repeat: Infinity }}
-              className="glass-strong rounded-[2.5rem] p-8 md:p-10 border border-primary/20"
+              className="glass-strong rounded-[3rem] p-10 md:p-12 border border-primary/20 relative overflow-hidden"
             >
-              <h2 className="text-2xl font-display font-bold mb-2">Success!</h2>
-              <p className="text-sm text-muted-foreground mb-8">Memorize this code to verify</p>
+              {/* Critical Warning Banner */}
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 mb-8 flex items-center gap-4 text-left">
+                <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center shrink-0">
+                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-amber-600 dark:text-amber-400 font-black text-xs uppercase tracking-wider">Unmanned Kiosk Reminder</p>
+                  <p className="text-sm font-medium leading-tight">Take a screenshot or memorise this code. You <b>CANNOT</b> print without it.</p>
+                </div>
+              </div>
+
+              <h2 className="text-3xl font-display font-bold mb-2">Order Confirmed!</h2>
+              <p className="text-sm text-muted-foreground mb-10 italic">Your digital print ticket is ready</p>
 
               <div className="flex justify-center gap-3 mb-10">
                 {realOtp.split("").map((digit, i) => (
@@ -161,26 +223,31 @@ const PaymentPage = () => {
                     key={i}
                     initial={{ opacity: 0, y: 20, scale: 0.5 }}
                     animate={i < revealedDigits ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 20, scale: 0.5 }}
-                    className="w-10 h-14 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center font-display font-bold text-2xl text-primary"
+                    className="w-12 h-16 rounded-2xl bg-primary/5 border-2 border-primary/20 flex items-center justify-center font-display font-black text-3xl text-primary shadow-inner"
                   >
                     {digit}
                   </motion.div>
                 ))}
               </div>
 
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-4">Enter Code to Continue</p>
-              <div className="flex justify-center gap-2">
-                {otp.map((d, i) => (
-                  <input
-                    key={i}
-                    ref={(el) => { inputRefs.current[i] = el; }}
-                    value={d}
-                    onChange={(e) => handleOtpChange(i, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(i, e)}
-                    maxLength={1}
-                    className="w-10 h-12 rounded-xl glass text-center font-display font-bold text-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all shadow-inner"
-                  />
-                ))}
+              <div className="space-y-4">
+                <GlowButton 
+                  size="lg" 
+                  onClick={() => setStep("success")} 
+                  className="w-full h-14 text-lg font-bold shadow-xl"
+                >
+                  I've Saved the Code
+                </GlowButton>
+                
+                <button 
+                  onClick={() => window.print()} 
+                  className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-2 mx-auto"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Save as Digital Receipt
+                </button>
               </div>
             </motion.div>
           </motion.div>

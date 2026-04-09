@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Header, Query
+from fastapi import APIRouter, HTTPException, Depends, Header, Query, Body
 from pydantic import BaseModel
 from typing import Optional, List
 from database import supabase
@@ -27,16 +27,25 @@ async def get_overview():
     7.5 Global Stats Overview
     """
     # 1. Total and Today's Stats from print_orders
-    # Using UTC for consistent DB comparison
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
     
     # All time stats
-    all_time_res = supabase.table("print_orders").select("total_amount").eq("print_status", "completed").execute()
+    all_time_res = supabase.table("print_orders").select("total_amount, total_pages, kiosk_id").eq("print_status", "completed").execute()
     total_revenue_alltime = sum(row.get("total_amount", 0) for row in all_time_res.data)
+    total_pages_alltime = sum(row.get("total_pages", 0) for row in all_time_res.data)
+    
+    # Kiosk volume stats
+    volume_by_kiosk = {}
+    for row in all_time_res.data:
+        k_id = row.get("kiosk_id")
+        volume_by_kiosk[k_id] = volume_by_kiosk.get(k_id, 0) + 1
+    
+    top_kiosk_id = max(volume_by_kiosk, key=volume_by_kiosk.get) if volume_by_kiosk else "N/A"
     
     # Today's stats
-    today_res = supabase.table("print_orders").select("total_amount").eq("print_status", "completed").gte("created_at", today_start).execute()
+    today_res = supabase.table("print_orders").select("total_amount, total_pages").eq("print_status", "completed").gte("created_at", today_start).execute()
     total_revenue_today = sum(row.get("total_amount", 0) for row in today_res.data)
+    total_pages_today = sum(row.get("total_pages", 0) for row in today_res.data)
     total_orders_today = len(today_res.data)
     
     # 2. Kiosk numbers
@@ -47,7 +56,10 @@ async def get_overview():
     return {
         "total_revenue_today": total_revenue_today,
         "total_orders_today": total_orders_today,
+        "total_pages_today": total_pages_today,
         "total_revenue_alltime": total_revenue_alltime,
+        "total_pages_alltime": total_pages_alltime,
+        "top_kiosk_id": top_kiosk_id,
         "active_kiosks": active_kiosks,
         "total_kiosks": total_kiosks
     }

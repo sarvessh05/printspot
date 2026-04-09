@@ -38,8 +38,8 @@ app.add_middleware(
 )
 
 # --- Routes inclusion ---
-app.include_router(print_route.router)
-app.include_router(admin_route.router)
+app.include_router(print_route.router, prefix="/api")
+app.include_router(admin_route.router, prefix="/api")
 
 @app.get("/api/health")
 async def health_check():

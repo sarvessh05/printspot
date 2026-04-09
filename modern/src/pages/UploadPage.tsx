@@ -70,6 +70,10 @@ const UploadPage = () => {
   }, []);
 
   const handleFiles = useCallback(async (fileList: FileList) => {
+    if (files.length + fileList.length > 30) {
+      toast.error("Maximum 30 documents allowed per session to prevent system lag.");
+      return;
+    }
     setIsAbsorbing(true);
     const processedFiles: UploadedFile[] = [];
     

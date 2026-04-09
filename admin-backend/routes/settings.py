@@ -37,3 +37,13 @@ async def update_pricing(pricing: PricingUpdate, admin: bool = Depends(verify_ad
         return {"success": True, "data": response.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/kiosk-status")
+async def get_kiosk_status():
+    """Fetches the real-time health and heartbeat data of all active kiosks."""
+    try:
+        # Fetch data from kiosk_health table (heartbeat collector)
+        response = supabase.table("kiosk_health").select("*").execute()
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

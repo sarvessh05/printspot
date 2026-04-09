@@ -12,12 +12,14 @@ interface UploadedFile {
   size: number;
   pages: number;
   fileObj: File;
-  mode: "bw" | "color";
+  mode: "bw" | "color" | "mixed";
   copies: number;
   isTwoSided: boolean;
   originalPageCount: number;
   printRange: "all" | "custom" | "odd" | "even";
   customRangeString: string;
+  colorPagesString: string;
+  paperSize: "a4" | "letter";
 }
 
 const SlidingToggle = ({ options, value, onChange, id }: { options: string[], value: string, onChange: (v: any) => void, id: string }) => (
@@ -53,7 +55,9 @@ const ReviewPage = () => {
   const [files, setFiles] = useState<UploadedFile[]>(initialFiles.map((f: any) => ({
     ...f,
     printRange: f.printRange || "all",
-    customRangeString: f.customRangeString || ""
+    customRangeString: f.customRangeString || "",
+    colorPagesString: f.colorPagesString || "",
+    paperSize: f.paperSize || "a4"
   })));
 
   useEffect(() => {
@@ -117,16 +121,38 @@ const ReviewPage = () => {
     const copies = file.copies || 1;
 
     if (file.mode === 'bw') {
-      // BW Double sided = 1.5x of single (effectively ₹3 total per sheet vs ₹4 for 2 sheets)
-      // Actually common logic: ₹2 per page single, ₹3 per sheet double
       basePrice = file.isTwoSided 
-        ? (Math.floor(pages / 2) * 3 + (pages % 2) * 2) 
+        ? (Math.floor(pages / 2) * Math.ceil(pricing.bw * 1.5) + (pages % 2) * pricing.bw) 
         : pages * pricing.bw;
-    } else {
-      // Color Double sided = Specialized premium (₹10 per page, ₹18 per sheet)
+    } else if (file.mode === 'color') {
       basePrice = file.isTwoSided 
-        ? (Math.floor(pages / 2) * 18 + (pages % 2) * pricing.color) 
+        ? (Math.floor(pages / 2) * Math.ceil(pricing.color * 1.8) + (pages % 2) * pricing.color) 
         : pages * pricing.color;
+    } else if (file.mode === 'mixed') {
+      // Mixed mode: Parse color pages, calculate color vs bw
+      try {
+        let colorPageCount = 0;
+        if (file.colorPagesString.trim()) {
+          let pagesSet = new Set<number>();
+          const parts = file.colorPagesString.split(',');
+          parts.forEach(part => {
+            if (part.includes('-')) {
+              let [start, end] = part.split('-').map(num => parseInt(num.trim()));
+              if (!isNaN(start) && !isNaN(end)) {
+                 for (let i = start; i <= end; i++) pagesSet.add(i);
+              }
+            } else {
+              const num = parseInt(part.trim());
+              if (!isNaN(num)) pagesSet.add(num);
+            }
+          });
+          colorPageCount = pagesSet.size;
+        }
+        const bwPageCount = Math.max(0, pages - colorPageCount);
+        basePrice = (colorPageCount * pricing.color) + (bwPageCount * pricing.bw);
+      } catch (e) {
+        basePrice = pages * pricing.bw; 
+      }
     }
     return basePrice * copies;
   };
@@ -154,15 +180,15 @@ const ReviewPage = () => {
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-6 py-8 w-full flex-grow pb-48">
-        <div className="space-y-8">
+      <div className="max-w-4xl mx-auto px-6 py-8 w-full flex-grow pb-48">
+        <div className="flex overflow-x-auto gap-8 pb-12 snap-x snap-mandatory no-scrollbar -mx-4 px-4 h-full items-start">
           {files.map((file, idx) => (
             <motion.div
               key={file.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.1 }}
-              className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800 overflow-hidden"
+              className="min-w-[85vw] md:min-w-[500px] snap-center flex-shrink-0 bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800 overflow-hidden"
             >
               {/* File Info Title Bar */}
               <div className="bg-slate-50/50 dark:bg-slate-800/20 px-8 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
@@ -195,9 +221,40 @@ const ReviewPage = () => {
                     </label>
                     <SlidingToggle 
                       id={`mode-${file.id}`}
-                      options={["B&W", "Color"]} 
+                      options={["B&W", "Color", "Mixed"]} 
                       value={file.mode} 
                       onChange={(v) => updateFileSetting(file.id, 'mode', v)} 
+                    />
+                    <AnimatePresence>
+                      {file.mode === 'mixed' && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="pt-2"
+                        >
+                          <input 
+                            type="text"
+                            placeholder="Color pages (e.g. 1, 3-5)"
+                            value={file.colorPagesString}
+                            onChange={(e) => updateFileSetting(file.id, 'colorPagesString', e.target.value)}
+                            className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl py-2 px-3 text-[10px] font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Paper Size */}
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                       <ScanText className="w-3 h-3 text-blue-500" /> Paper Size
+                    </label>
+                    <SlidingToggle 
+                      id={`paper-${file.id}`}
+                      options={["A4", "Letter"]} 
+                      value={file.paperSize} 
+                      onChange={(v) => updateFileSetting(file.id, 'paperSize', v)} 
                     />
                   </div>
 

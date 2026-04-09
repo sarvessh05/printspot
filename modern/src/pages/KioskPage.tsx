@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { PageTransition } from "@/components/PageTransition";
 import { RippleButton } from "@/components/RippleButton";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Printer, Delete, Loader2, AlertCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -13,12 +13,57 @@ const KioskPage = () => {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
   const [orderDetails, setOrderDetails] = useState<any[]>([]);
+  const [isMaintenance, setIsMaintenance] = useState(false);
+  const [maintenanceMsg, setMaintenanceMsg] = useState("System checking...");
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const resetIdleTimer = () => {
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    if (state === "input" && code === "") return;
+    
+    idleTimerRef.current = setTimeout(() => {
+      setCode("");
+      setState("input");
+      setProgress(0);
+    }, 120000); // 2 minutes
+  };
 
   const handleKeyPress = (key: string) => {
+    resetIdleTimer();
     if (code.length < 6) setCode((prev) => prev + key);
   };
 
-  const handleDelete = () => setCode((prev) => prev.slice(0, -1));
+  const handleDelete = () => {
+    resetIdleTimer();
+    setCode((prev) => prev.slice(0, -1));
+  };
+
+  useEffect(() => {
+    const checkMaintenance = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/printer/status');
+        const data = await res.json();
+        if (data.status === 'ERROR' || data.status === 'OFFLINE') {
+           setIsMaintenance(true);
+           setMaintenanceMsg(data.reason || "Printer is currently undergoing maintenance.");
+        } else {
+           setIsMaintenance(false);
+        }
+      } catch (e) {
+        setIsMaintenance(true);
+        setMaintenanceMsg("Hardware link lost. Contact operator.");
+      }
+    };
+
+    const interval = setInterval(checkMaintenance, 10000); // Check every 10s
+    checkMaintenance();
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    resetIdleTimer();
+    return () => { if (idleTimerRef.current) clearTimeout(idleTimerRef.current); };
+  }, [code, state]);
 
   const handleSubmit = async () => {
     if (code.length !== 6) return;
@@ -35,32 +80,22 @@ const KioskPage = () => {
       setOrderDetails(verifyData.items);
       setState("printing");
       
-      // Simulate/Trigger Print Process
-      let currentProgress = 0;
-      const totalItems = verifyData.items.length;
-      
-      for (let i = 0; i < totalItems; i++) {
-        const item = verifyData.items[i];
-        
-        // Call local hardware printer server (usually localhost:5000)
-        try {
-          await fetch('http://localhost:5000/api/print/print-pdf', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(item)
-          });
-        } catch (printErr) {
-          console.error("Printer Hardware Error:", printErr);
-          // We don't stop the whole process if one print fails, but we log it
-        }
+      // Call local hardware printer server batch endpoint
+      const printRes = await fetch('http://localhost:5000/api/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(verifyData.items)
+      });
 
-        currentProgress = Math.round(((i + 1) / totalItems) * 100);
-        setProgress(currentProgress);
+      if (!printRes.ok) {
+        const printError = await printRes.json();
+        throw new Error(printError.detail || "Printer Hardware Error");
       }
 
-      // Mark order as completed
+      // Mark order as completed ONLY if printer accepted the jobs
       await fetch(`${backendUrl}/api/orders/mark-completed/${code}`, { method: 'POST' });
       
+      setProgress(100);
       setTimeout(() => setState("done"), 1000);
 
     } catch (err: any) {
@@ -196,6 +231,24 @@ const KioskPage = () => {
           </motion.div>
         )}
       </div>
+      {/* Maintenance Overlay */}
+      {isMaintenance && (
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[20000] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-10 text-center"
+        >
+           <div className="w-32 h-32 rounded-full bg-amber-500/10 flex items-center justify-center mb-8 border border-amber-500/20">
+              <AlertCircle className="w-16 h-16 text-amber-500 animate-pulse" />
+           </div>
+           <h2 className="text-4xl font-display font-black text-white mb-4 tracking-tight">Kiosk Offline</h2>
+           <p className="max-w-md text-slate-400 text-lg leading-relaxed">{maintenanceMsg}</p>
+           <div className="mt-12 flex items-center gap-2 text-slate-500 uppercase tracking-widest text-xs font-bold">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Retrying Hardware Link...
+           </div>
+        </motion.div>
+      )}
     </PageTransition>
   );
 };

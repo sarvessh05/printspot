@@ -9,6 +9,7 @@ from routes.analytics import router as analytics_router
 from routes.order_creation import router as order_creation_router
 from routes.settings import router as settings_router
 from routes.payments import router as payments_router
+from routes.logs_collector import router as logs_router
 
 # In dev: docs_url="/docs". In prod: None (disabled).
 app = FastAPI(
@@ -35,6 +36,7 @@ app.include_router(analytics_router)
 app.include_router(order_creation_router)
 app.include_router(settings_router)
 app.include_router(payments_router)
+app.include_router(logs_router)
 
 @app.get("/")
 @app.get("/health")

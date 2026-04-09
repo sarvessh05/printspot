@@ -20,6 +20,8 @@ class OrderItem(BaseModel):
     total_pages: int = Field(default=1, ge=1)
     total_amount: int
     unique_name: str
+    color_pages: Optional[str] = None
+    paper_size: str = Field(default="a4")
 
 from routes.payments import client as razorpay_client
 
@@ -41,6 +43,8 @@ class OrderCreateRequest(BaseModel):
     total_amount: int
     payment_id: str
     unique_name: str
+    color_pages: Optional[str] = None
+    paper_size: str = Field(default="a4")
 
 def generate_otp():
     """Generates a secure 6-digit OTP."""
@@ -64,6 +68,8 @@ async def create_order(order: OrderCreateRequest):
             "payment_status": "paid",
             "payment_id": order.payment_id,
             "unique_name": order.unique_name,
+            "color_pages": order.color_pages,
+            "paper_size": order.paper_size,
             "print_status": "pending"
         }
         response = supabase.table("print_orders").insert([order_data]).execute()
@@ -106,6 +112,8 @@ async def create_batch_order(request: BatchOrderRequest):
                 "payment_status": "paid",
                 "payment_id": request.razorpay_payment_id,
                 "unique_name": item.unique_name,
+                "color_pages": item.color_pages,
+                "paper_size": item.paper_size,
                 "print_status": "pending"
             })
         
@@ -120,4 +128,40 @@ async def create_batch_order(request: BatchOrderRequest):
          raise HTTPException(status_code=401, detail="CRITICAL: Invalid Payment Signature Attempt!")
     except Exception as e:
         print(f"Batch Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/verify-otp/{otp}")
+async def verify_otp(otp: str):
+    """Verifies OTP and returns associated print items."""
+    try:
+        response = supabase.table("print_orders").select("*").eq("otp", otp).eq("print_status", "pending").execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Invalid or already used OTP")
+        
+        items = []
+        for row in response.data:
+            items.append({
+                "db_id": row["id"],
+                "name": row["file_name"],
+                "downloadUrl": row["file_url"],
+                "copies": row["copies"],
+                "mode": row["mode"],
+                "isTwoSided": row["is_two_sided"],
+                "paperSize": row.get("paper_size", "A4"),
+                "printRange": row["print_range"],
+                "colorPages": row.get("color_pages"),
+                "totalPages": row["total_pages"]
+            })
+            
+        return {"items": items}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/mark-completed/{otp}")
+async def mark_completed(otp: str):
+    """Marks all orders in a batch as completed."""
+    try:
+        supabase.table("print_orders").update({"print_status": "completed"}).eq("otp", otp).execute()
+        return {"success": True}
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

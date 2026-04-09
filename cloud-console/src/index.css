@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-white antialiased;
+  }
+}
+
+.glass-card {
+  @apply bg-surface/50 border border-white/10 backdrop-blur-md rounded-2xl p-6 transition-all hover:bg-surface/80;
+}
+
+.stat-value {
+  @apply text-3xl font-bold tracking-tight;
+}
+
+.stat-label {
+  @apply text-sm text-gray-400 font-medium;
+}

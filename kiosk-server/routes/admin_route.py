@@ -4,13 +4,13 @@ from utils.state import get_kiosk_state, save_kiosk_state
 from utils.cloud_client import cloud
 from utils.printer_status import printer_tracker
 from utils.logger import get_logger
+from utils.system_cmd import shutdown_machine, restart_machine, restart_kiosk_app
 import os
-import subprocess
 
 logger = get_logger("admin_route")
 router = APIRouter()
 
-@router.get("/api/printer-status")
+@router.get("/printer-status")
 async def get_printer_status():
     """
     Returns the current cached health of the system for both Frontend and Heartbeat.
@@ -60,16 +60,27 @@ async def reset_counters(
 
 @router.post("/admin/shutdown")
 async def shutdown_system(password: str = Body(..., embed=True)):
-    """
-    Triggers a 100% shutdown of the Windows machine.
-    Equivalent to server.js's shutdown /s /t 0 logic.
-    """
+    """Triggers a clean system shutdown."""
     if password != settings.ADMIN_PASSWORD:
         raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    success = shutdown_machine()
+    return {"success": success, "message": "System is shutting down..." if success else "Failed to shutdown"}
 
-    logger.critical("🚨 KIOSK SHUTDOWN INITIATED VIA REMOTE COMMAND.")
+@router.post("/admin/restart")
+async def restart_system(password: str = Body(..., embed=True)):
+    """Triggers a clean system restart."""
+    if password != settings.ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     
-    # We do a subprocess popen so it doesn't block the HTTP response
-    subprocess.Popen(["shutdown", "/s", "/t", "0"], shell=True)
+    success = restart_machine()
+    return {"success": success, "message": "System is restarting..." if success else "Failed to restart"}
+
+@router.post("/admin/restart-app")
+async def restart_application(password: str = Body(..., embed=True)):
+    """Restarts the kiosk application process."""
+    if password != settings.ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     
-    return {"success": True, "message": "Shutting down system..."}
+    restart_kiosk_app()
+    return {"success": True, "message": "Application restart requested"}

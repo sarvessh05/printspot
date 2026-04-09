@@ -5,7 +5,15 @@ import wmi
 from typing import Optional, Dict
 from config import settings
 from .logger import get_logger
-from pysnmp.hlapi.asyncio import *
+from pysnmp.hlapi.asyncio import (
+    SnmpEngine,
+    CommunityData,
+    UdpTransportTarget,
+    ContextData,
+    ObjectType,
+    ObjectIdentity,
+    getCmd
+)
 
 logger = get_logger("printer_status")
 
@@ -26,32 +34,47 @@ class PrinterStatusTracker:
         self._cached_status = {"status": "NORMAL", "is_online": True}
         self._last_refresh = 0
         self._lock = asyncio.Lock()
+        self.c = _wmi_client
+        self.last_check = 0
+        self.cached_status = {}
+        self.last_queue_status = {}
 
-    async def check_usb_connected(self) -> bool:
+    async def check_usb_connected(self) -> dict:
         """
-        Uses WMI to check if ANY printer matching the configured name is connected via USB.
+        Specific check for all 4 configured printer queues.
+        Returns a dictionary of status for each printer.
         """
+        printers_status = {}
+        configured_names = {
+            "bw": settings.PRINTER_BW,
+            "bw_duplex": settings.PRINTER_BW_DUPLEX,
+            "color": settings.PRINTER_COLOR,
+            "color_duplex": settings.PRINTER_COLOR_DUPLEX
+        }
+        
         try:
-            # Query Win32_Printer for local printers
-            printers = _wmi_client.Win32_Printer()
-            configured_names = [
-                settings.PRINTER_BW,
-                settings.PRINTER_BW_DUPLEX,
-                settings.PRINTER_COLOR,
-                settings.PRINTER_COLOR_DUPLEX
-            ]
+            printers = self.c.Win32_Printer()
+            for key, name in configured_names.items():
+                # Find matching printer object
+                p_obj = next((p for p in printers if p.Name == name), None)
+                if not p_obj:
+                    printers_status[key] = "MISSING"
+                else:
+                    # Status mapping: 3=Ready, 4=Printing, 5=Warming up, 1=Paused, 2=Error
+                    status_code = getattr(p_obj, "PrinterStatus", 0)
+                    if status_code in [3, 4, 5]:
+                        printers_status[key] = "READY"
+                    elif status_code == 1:
+                        printers_status[key] = "PAUSED"
+                    elif status_code == 2:
+                        printers_status[key] = "ERROR"
+                    else:
+                        printers_status[key] = f"UNKNOWN({status_code})"
             
-            # For USB/Local printers, we check if at least one of our primary queues is ready
-            # Usually if one is connected/online, they all are since they share hardware.
-            for p in printers:
-                if p.Name in configured_names:
-                    # Status code 3 = Idle (Online), 4 = Printing, 5 = WarminUp
-                    if p.PrinterStatus in [3, 4, 5]:
-                        return True
-            return False
+            return printers_status
         except Exception as e:
-            logger.error(f"Error querying WMI: {e}")
-            return False
+            logger.error(f"💥 WMI Printer Check Failed: {e}")
+            return {k: "WMI_ERROR" for k in configured_names}
 
     async def check_snmp_hardware_status(self) -> Dict:
         """
@@ -64,7 +87,7 @@ class PrinterStatusTracker:
         try:
             # SNMP GET request for hrDeviceStatus
             snmp_engine = SnmpEngine()
-            iterator = await get_cmd(
+            iterator = await getCmd(
                 snmp_engine,
                 CommunityData("public", mpModel=0),
                 await UdpTransportTarget.create((settings.PRINTER_IP, 161), timeout=2.0, retries=1),
@@ -163,9 +186,25 @@ class PrinterStatusTracker:
             ps_status = await self.check_spooler_queue_powershell()
             
             # Step 3: Physical USB / Ping Check
-            is_usb_online = await self.check_usb_connected()
-            is_online = is_usb_online
+            queue_status = await self.check_usb_connected()
+            is_usb_online = all(status == "READY" for status in queue_status.values())
             
+            # Trigger Alerts for Specific Queue Drops
+            from .notifications import notifier
+            for key, status in queue_status.items():
+                last_s = self.last_queue_status.get(key)
+                if last_s == "READY" and status != "READY":
+                    # Queue dropped!
+                    alert_msg = f"⚠️ <b>Printer Queue Drop!</b>\nQueue: <code>{key}</code>\nCurrent Status: <b>{status}</b>"
+                    asyncio.create_task(notifier.send_alert(alert_msg))
+                elif last_s and last_s != "READY" and status == "READY":
+                    # Queue recovered
+                    alert_msg = f"✅ <b>Printer Queue Recovered!</b>\nQueue: <code>{key}</code>"
+                    asyncio.create_task(notifier.send_alert(alert_msg))
+            
+            self.last_queue_status = queue_status
+            
+            is_online = is_usb_online
             connectivity = "USB"
             
             if not is_usb_online:
@@ -184,7 +223,7 @@ class PrinterStatusTracker:
             elif not is_online:
                 system_status = "OFFLINE"
             else:
-                # WMI/Win32 fallback for local jams
+                # WMI/Win32 fallback for local Jams
                 try:
                     default_printer = win32print.GetDefaultPrinter()
                     handle = win32print.OpenPrinter(default_printer)
@@ -202,12 +241,12 @@ class PrinterStatusTracker:
                 "is_online": is_online,
                 "connectivity": connectivity,
                 "status": system_status,
-                "snmp_code": snmp_result["code"]
+                "snmp_code": snmp_result["code"],
+                "queues": queue_status
             }
             # Update cache
             self._cached_status = result
-            from time import time
-            self._last_refresh = time()
+            self._last_refresh = time.time()
             
             logger.info(f"📊 Status Check Complete: {result}")
             return result

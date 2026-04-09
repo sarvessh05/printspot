@@ -61,6 +61,16 @@ This document tracks the progress of the Modern Frontend Migration, Feature Impl
     - [ ] Add "Shutdown Machine" and "Restart Kiosk App" buttons within the hidden menu specifically for on-site maintenance.
     - [ ] Add a safety confirmation modal to prevent accidental shutdowns.
 
+## Phase 8: Final Polish & Critical Fixes (Audit Results)
+- [ ] **Razorpay Real Integration:** Replace simulation logic in `PaymentPage.tsx` with actual Razorpay SDK and backend verification.
+- [ ] **Mixed Color Mode UI:** Implement the overlay to select specific pages for Color vs BW in `ReviewPage.tsx` and pass `colorPages` to the backend.
+- [ ] **4-Printer Health Check:** Update `printer_status.py` to verify each of the 4 printer queues specifically; trigger Telegram alerts if any specific queue drops.
+- [ ] **Explicit Failure Reporting:** Update `cloud_client.py` and Supabase schema to support a `failed` status for better telemetry.
+- [ ] **Batch Size Guard (50MB):** Implement calculation for total file size in `UploadPage.tsx` to block uploads exceeding 50MB combined.
+- [ ] **Paper Size Selector:** Re-introduce A4, A3, Letter selection in `ReviewPage.tsx` with dynamic pricing sync.
+- [ ] **Custom Page Validation:** Add strict bounds-checking for custom page ranges to prevent errors in `ReviewPage.tsx`.
+- [ ] **Lazy PDF Previews:** Integrate `react-pdf` for lightweight visual document validation in the Review tab.
+
 ---
 
 ## Status Key

@@ -1,9 +1,42 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+from typing import List, Dict, Any, Optional
 import razorpay
 from config import settings
+from database import supabase
 
 router = APIRouter(prefix="/api/payments", tags=["Razorpay Integration"])
+
+class CalculationItem(BaseModel):
+    pages: int
+    copies: int
+    mode: str  # 'bw' or 'color'
+    isTwoSided: bool
+
+@router.post("/calculate")
+async def calculate_total_cost(items: List[CalculationItem]):
+    """
+    Server-side calculation logic to prevent pricing tampering.
+    """
+    try:
+        # Fetch pricing from DB
+        res = supabase.table("platform_settings").select("*").eq("key", "pricing").execute()
+        pricing = res.data[0]["value"] if res.data else {"bw": 2, "color": 10, "double_sided_discount": 0}
+        
+        total = 0
+        for item in items:
+            item_total = 0
+            pages = item.pages
+            if item.mode == "bw":
+                item_total = ( (pages // 2) * 3 + (pages % 2) * 2 ) if item.isTwoSided else (pages * pricing["bw"])
+            else:
+                item_total = ( (pages // 2) * 18 + (pages % 2) * 10 ) if item.isTwoSided else (pages * pricing["color"])
+            
+            total += item_total * item.copies
+            
+        return {"total": total, "currency": "INR"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- RAZORPAY CLIENT INITIALIZATION ---
 client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))

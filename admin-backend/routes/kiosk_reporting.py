@@ -82,18 +82,24 @@ async def report_complete(report: CompletionReport):
 
     return {"ok": True}
 
-@router.post("/report-failed")
-@router.post("/revert") # Alias for compatibility with cloud_client.py
-async def report_failed(report: FailureReport):
+@router.post("/revert")
+async def revert_order(report: FailureReport):
     """
-    Kiosk signals a specific print job failed.
+    Reverts an order to pending status (used for machine offline/pre-flight issues).
     """
-    # 1. Verify token
     await verify_kiosk(report.kiosk_id, report.kiosk_token)
-    
-    # 2. Update print_orders table - revert to pending
-    update_res = supabase.table("print_orders").update({
+    supabase.table("print_orders").update({
         "print_status": "pending"
     }).eq("id", report.db_id).execute()
+    return {"ok": True}
 
+@router.post("/report-failed")
+async def report_failed(report: FailureReport):
+    """
+    Explicitly marks an order as failed (used for actual print execution errors).
+    """
+    await verify_kiosk(report.kiosk_id, report.kiosk_token)
+    supabase.table("print_orders").update({
+        "print_status": "failed"
+    }).eq("id", report.db_id).execute()
     return {"ok": True}

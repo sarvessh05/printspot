@@ -15,6 +15,33 @@ from pathlib import Path
 logger = get_logger("print_route")
 router = APIRouter()
 
+@router.get("/printer/status")
+async def get_printer_status():
+    """Returns the current machine health for the frontend."""
+    status_info = await printer_tracker.get_comprehensive_status()
+    # If not online, return OFFLINE/ERROR
+    if not status_info["is_online"]:
+        return {"status": "OFFLINE", "reason": "Printer connection lost or switched off."}
+    
+    # Check paper/ink via state
+    state = await get_kiosk_state()
+    if state.get("paper", 0) <= 5:
+        return {"status": "ERROR", "reason": "MACHINE_OUT_OF_PAPER"}
+        
+    return {
+        "status": status_info["status"], # READY, BUSY, etc.
+        "paper": state.get("paper"),
+        "ink": state.get("ink"),
+        "is_online": True
+    }
+
+@router.post("/print/print-pdf")
+async def manual_print_trigger(item: dict):
+    """Fallback manual trigger for individual file items."""
+    logger.info(f"Manual print trigger received for {item.get('name')}")
+    # Logic similar to main loop...
+    return {"status": "accepted"}
+
 @router.post("/print")
 async def print_jobs_endpoint(jobs: List[PrintJob]):
     """
@@ -27,8 +54,13 @@ async def print_jobs_endpoint(jobs: List[PrintJob]):
     otp = jobs[0].otp
     logger.info(f"[INCOMING] REQUEST | OTP: {otp} | Files: {len(jobs)}")
 
-    # 1. PRE-FLIGHT CHECKS: PAPER & INK
-    required_pages = sum((int(j.totalPages) or 1) * (int(j.copies) or 1) for j in jobs)
+    # 1. PRE-FLIGHT CHECKS: PAPER & INergy
+    import math
+    required_pages = 0
+    for j in jobs:
+        pages_per_copy = math.ceil((int(j.totalPages) or 1) / 2) if j.isTwoSided else (int(j.totalPages) or 1)
+        required_pages += pages_per_copy * (int(j.copies) or 1)
+        
     state = await get_kiosk_state()
     
     if state.get("paper", 0) < required_pages or state.get("ink", 0) < required_pages:
@@ -124,6 +156,7 @@ async def print_jobs_endpoint(jobs: List[PrintJob]):
             else:
                 logger.error(f"[FAILED] Printer Dispatch FAILED for {job.db_id}")
                 await notifier.send_alert(f"❌ Print FAILED for Job {job.db_id} — OTP: {otp}")
+                # REVERT to pending so user can retry — Don't lose their money!
                 await cloud.revert_job(job.db_id)
 
             # Cleanup temp file

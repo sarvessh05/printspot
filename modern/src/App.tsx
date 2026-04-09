@@ -14,6 +14,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AboutUs from "./pages/AboutUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
+import AdminTrigger from "./components/AdminTrigger";
+import HelpButton from "./components/HelpButton";
 
 const queryClient = new QueryClient();
 
@@ -40,9 +42,11 @@ const AnimatedRoutes = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
       <BrowserRouter>
+        <AdminTrigger />
+        <HelpButton />
+        <Toaster />
+        <Sonner />
         <AnimatedRoutes />
       </BrowserRouter>
     </TooltipProvider>
