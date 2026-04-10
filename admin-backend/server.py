@@ -19,15 +19,19 @@ app = FastAPI(
     redoc_url=None,
 )
 
-# CORS — restricted to the configured origin (set ALLOWED_ORIGINS in .env for production)
+# CORS Configuration
+# NOTE: When allow_credentials=True, allow_origins cannot be ["*"]
 allowed_origins = settings.allowed_origins_list
+if "*" in allowed_origins and len(allowed_origins) > 1:
+    # If both * and specific domains are provided, prioritize specific domains for safety
+    allowed_origins = [o for o in allowed_origins if o != "*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PATCH"],
-    allow_headers=["Content-Type", "X-Admin-Password"],
+    allow_origins=allowed_origins if "*" not in allowed_origins else ["*"],
+    allow_credentials=True if "*" not in allowed_origins else False,
+    allow_methods=["*"],  # Allow all methods (GET, POST, OPTIONS, etc.)
+    allow_headers=["*"],  # Allow all headers
 )
 
 # Register Routers
