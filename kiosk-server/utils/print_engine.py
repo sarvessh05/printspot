@@ -99,6 +99,28 @@ async def print_pdf(file_path: Path, options: Dict) -> bool:
         if process.returncode != 0:
             err_msg = stderr.decode().strip()
             logger.error(f"❌ Windows Print Error (Code {process.returncode}): {err_msg}")
+            
+            # If SumatraPDF complains about the printer name, list what Windows actually sees
+            if "no such printer" in err_msg.lower():
+                logger.error("🔍 Mismatch detected! Listing installed printers according to Windows:")
+                try:
+                    ps_cmd = "Get-Printer | Select-Object Name | ConvertTo-Json"
+                    ps_proc = await asyncio.create_subprocess_exec(
+                        "powershell", "-NoProfile", "-Command", ps_cmd,
+                        stdout=asyncio.subprocess.PIPE
+                    )
+                    ps_out, _ = await ps_proc.communicate()
+                    import json
+                    printers = json.loads(ps_out.decode())
+                    if isinstance(printers, list):
+                        printer_names = [p.get("Name") for p in printers]
+                    else:
+                        printer_names = [printers.get("Name")]
+                    for name in printer_names:
+                        logger.error(f"   -> '{name}'")
+                except Exception as e:
+                    logger.error(f"   (Failed to fetch printer list: {e})")
+                    
             return False
         
         logger.info(f"✅ Job sent to spooler successfully.")
