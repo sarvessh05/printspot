@@ -1,0 +1,23 @@
+# Core Web Framework
+fastapi==0.135.3
+uvicorn[standard]==0.44.0
+watchfiles==1.0.4
+
+# HTTP & API Clients
+httpx==0.28.1
+requests==2.33.1
+razorpay==2.0.1
+supabase==2.28.3
+
+# Data Validation & Config
+pydantic==2.12.5
+pydantic-settings==2.13.1
+python-dotenv==1.2.2
+
+# PDF Processing
+pypdf==6.9.2
+
+# Windows System & Hardware
+pywin32==311
+wmi==1.5.1
+pysnmp==7.1.23
