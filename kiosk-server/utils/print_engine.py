@@ -10,10 +10,10 @@ logger = get_logger("print_engine")
 
 # Path to the bundled SumatraPDF or the system one
 def _get_sumatra_path() -> str:
-    path = settings.SUMATRA_PDF_PATH
+    path = settings.SUMATRA_PDF_PATH.strip().strip('"').strip("'")
     if path and os.path.exists(path):
         if path.lower().endswith('.lnk'):
-            logger.warning("⚠️ SUMATRA_PDF_PATH is a shortcut (.lnk). This might fail. Please use the direct .exe path.")
+            logger.warning(f"⚠️ SUMATRA_PDF_PATH is a shortcut (.lnk): {path}")
         return path
     
     # Try common locations
@@ -64,11 +64,13 @@ async def print_pdf(file_path: Path, options: Dict) -> bool:
     if page_range:
         settings_str += f",pages={page_range}"
     
-    # Determine correct printer name
+    # Determine correct printer name and strip quotes
     if mode == "color":
         printer_name = settings.PRINTER_COLOR_DUPLEX if is_two_sided else settings.PRINTER_COLOR
     else:
         printer_name = settings.PRINTER_BW_DUPLEX if is_two_sided else settings.PRINTER_BW
+        
+    printer_name = printer_name.strip().strip('"').strip("'")
 
     # SumatraPDF CLI command as a list
     command = [
@@ -101,6 +103,7 @@ async def print_pdf(file_path: Path, options: Dict) -> bool:
     except FileNotFoundError:
         logger.error(f"❌ SumatraPDF Execution Failed: The system cannot find the file specified: {SUMATRA_EXE}")
         return False
-    except Exception as e:
-        logger.error(f"💥 Critical engine failure: {str(e)}")
+    except Exception:
+        import traceback
+        logger.error(f"💥 Critical engine failure:\n{traceback.format_exc()}")
         return False
