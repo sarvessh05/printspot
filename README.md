@@ -39,26 +39,38 @@ The system uses centralized `.env` management.
 - Each backend folder (`kiosk-server` and `admin-backend`) has its own `.env` for secret keys.
 
 ### 3. Running the System
-Open four terminal tabs and run the following in each:
+You can use a **single virtual environment in the root** for both backends:
+```powershell
+# In the root directory:
+python -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+Then open four terminal tabs and run:
 
 **Terminal 1: Cloud Admin API**
 ```powershell
-cd admin-backend ; .\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 8083 --reload
+cd admin-backend
+..\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 8083 --reload
 ```
 
 **Terminal 2: Kiosk Hardware Server**
 ```powershell
-cd kiosk-server ; .\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 5000 --reload
+cd kiosk-server
+..\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 5000 --reload
 ```
 
 **Terminal 3: Kiosk Frontend**
 ```powershell
-cd frontend ; npm run dev -- --port=5173
+cd frontend
+npm run dev -- --port 5173
 ```
 
 **Terminal 4: Admin Panel UI**
 ```powershell
-cd admin-frontend ; npm run dev -- --port=5174
+cd admin-frontend
+npm run dev -- --port 5174
 ```
 
 ---

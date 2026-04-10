@@ -65,19 +65,37 @@ Sync-EnvFiles
 
 # 2. Setup Venvs
 Write-Host "`n[*] Verifying Python Virtual Environments..." -ForegroundColor Cyan
-if (!(Test-Path "admin-backend\venv")) {
-    Write-Host "[!] Creating venv for admin-backend..."
-    cd admin-backend ; python -m venv venv ; .\venv\Scripts\python -m pip install -r requirements.txt ; cd ..
-}
-if (!(Test-Path "kiosk-server\venv")) {
-    Write-Host "[!] Creating venv for kiosk-server..."
-    cd kiosk-server ; python -m venv venv ; .\venv\Scripts\python -m pip install -r requirements.txt ; cd ..
+$rootVenv = Join-Path $PSScriptRoot "venv\Scripts\python.exe"
+$backendVenv = Join-Path $PSScriptRoot "admin-backend\venv\Scripts\python.exe"
+$kioskServerVenv = Join-Path $PSScriptRoot "kiosk-server\venv\Scripts\python.exe"
+
+# If root venv exists, we use it for both. Otherwise look for local ones.
+if (Test-Path $rootVenv) {
+    $pythonApi = $rootVenv
+    $pythonKiosk = $rootVenv
+    Write-Host "✅ Using root virtual environment." -ForegroundColor Green
+} else {
+    Write-Host "[!] Root venv not found, checking sub-directories..." -ForegroundColor Gray
+    if (!(Test-Path $backendVenv)) {
+        Write-Host "[!] Creating venv for admin-backend..."
+        cd admin-backend ; python -m venv venv ; .\venv\Scripts\python -m pip install -r requirements.txt ; cd ..
+    }
+    if (!(Test-Path $kioskServerVenv)) {
+        Write-Host "[!] Creating venv for kiosk-server..."
+        cd kiosk-server ; python -m venv venv ; .\venv\Scripts\python -m pip install -r requirements.txt ; cd ..
+    }
+    $pythonApi = $backendVenv
+    $pythonKiosk = $kioskServerVenv
 }
 
 # 3. Setup Node Modules
-if (!(Test-Path "modern\node_modules")) {
-    Write-Host "[!] Installing Node modules for Modern Frontend..."
-    cd modern ; npm install ; cd ..
+if (!(Test-Path "frontend\node_modules")) {
+    Write-Host "[!] Installing Node modules for Frontend..."
+    cd frontend ; npm install ; cd ..
+}
+if (!(Test-Path "admin-frontend\node_modules")) {
+    Write-Host "[!] Installing Node modules for Admin Frontend..."
+    cd admin-frontend ; npm install ; cd ..
 }
 
 # 4. SumatraPDF Check
@@ -90,16 +108,19 @@ if (!(Test-Path "C:\Program Files\SumatraPDF\SumatraPDF.exe")) {
 Write-Header "STARTING ALL SERVICES"
 
 # Start Backend
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd admin-backend; title 'BACKEND-API'; .\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 8083"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd admin-backend; title 'BACKEND-API'; & '$pythonApi' -m uvicorn server:app --host 0.0.0.0 --port 8083 --reload"
 # Start Kiosk Server
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd kiosk-server; title 'KIOSK-SERVER'; .\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 5000"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd kiosk-server; title 'KIOSK-SERVER'; & '$pythonKiosk' -m uvicorn server:app --host 0.0.0.0 --port 5000 --reload"
 # Start Frontend
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd modern; title 'FRONTEND-UI'; npm run dev"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd frontend; title 'KIOSK-UI'; npm run dev -- --port 5173"
+# Start Admin Frontend
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd admin-frontend; title 'ADMIN-DASHBOARD'; npm run dev -- --port 5174"
 
 Write-Host "`n🚀 ALL SYSTEMS LAUNCHED!" -ForegroundColor Green
 Write-Host "----------------------------------" -ForegroundColor Cyan
-Write-Host "Admin API:  http://localhost:8083"
-Write-Host "Kiosk API:  http://localhost:5000"
-Write-Host "Web UI:     http://localhost:8080"
+Write-Host "Admin API:      http://localhost:8083"
+Write-Host "Kiosk API:      http://localhost:5000"
+Write-Host "Kiosk UI:       http://localhost:5173"
+Write-Host "Admin Panel:    http://localhost:5174"
 Write-Host "----------------------------------" -ForegroundColor Cyan
 Write-Host "Keep these windows open to keep the kiosk running." -ForegroundColor Gray
