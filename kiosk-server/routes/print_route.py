@@ -180,9 +180,7 @@ async def print_jobs_endpoint(jobs: List[PrintJob]):
         return {"success": True, "message": "All print tasks dispatched."}
 
     except Exception as e:
-        logger.critical(f"[CRITICAL] CRITICAL ERROR in print lifecycle: {e}")
-        await notifier.send_alert(f"💥 CRITICAL ERROR in Print Lifecycle!\nOTP: {otp}\nError: {str(e)}")
-        # One last attempt to revert if something broke midway
-        for job in jobs:
-            await cloud.revert_job(job.db_id)
-        raise HTTPException(status_code=500, detail="MACHINE_ERROR")
+        logger.error(f"[CRITICAL] CRITICAL ERROR in print lifecycle: {e}")
+        # Final safety: if we crashed here, make sure we revert the OTP
+        await cloud.reverse_otp(otp, "SYSTEM_CRASH")
+        return {"status": "error", "message": str(e)}

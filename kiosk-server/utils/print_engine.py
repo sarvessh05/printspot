@@ -12,10 +12,11 @@ logger = get_logger("print_engine")
 def _get_sumatra_path() -> str:
     path = settings.SUMATRA_PDF_PATH
     if path and os.path.exists(path):
-        logger.info(f"✅ SumatraPDF found at: {path}")
-        return f'"{path}"'
+        if path.lower().endswith('.lnk'):
+            logger.warning("⚠️ SUMATRA_PDF_PATH is a shortcut (.lnk). This might fail. Please use the direct .exe path.")
+        return path
     
-    # Try common locations if the user didn't specify correctly
+    # Try common locations
     common_paths = [
         r"C:\Program Files\SumatraPDF\SumatraPDF.exe",
         r"C:\Program Files (x86)\SumatraPDF\SumatraPDF.exe",
@@ -23,11 +24,9 @@ def _get_sumatra_path() -> str:
     ]
     for p in common_paths:
         if os.path.exists(p):
-            logger.info(f"💾 SumatraPDF auto-detected at: {p}")
-            return f'"{p}"'
+            return p
 
-    # Fallback to system PATH
-    logger.warning(f"⚠️ SumatraPDF not found in common paths. Falling back to system 'SumatraPDF.exe'.")
+    logger.warning("⚠️ SumatraPDF not found. Falling back to system PATH.")
     return "SumatraPDF.exe"
 
 SUMATRA_EXE = _get_sumatra_path()
@@ -71,34 +70,37 @@ async def print_pdf(file_path: Path, options: Dict) -> bool:
     else:
         printer_name = settings.PRINTER_BW_DUPLEX if is_two_sided else settings.PRINTER_BW
 
-    # SumatraPDF CLI command
+    # SumatraPDF CLI command as a list
     command = [
-        f'"{SUMATRA_EXE}"',
-        f'-print-to "{printer_name}"',
-        f'-print-settings "{settings_str}"',
+        SUMATRA_EXE,
+        "-print-to", printer_name,
+        "-print-settings", settings_str,
         "-silent",
-        f'"{str(file_path)}"'
+        str(file_path)
     ]
     
-    cmd_str = " ".join(command)
     logger.info(f"🚀 Using Printer: {printer_name}")
-    logger.info(f"📋 Command: {cmd_str}")
+    logger.info(f"📋 Command: {' '.join(command)}")
 
     try:
-        # Create subprocess and wait for completion
-        process = await asyncio.create_subprocess_shell(
-            cmd_str,
+        # Pass the list directly to exec - no shell quoting issues
+        process = await asyncio.create_subprocess_exec(
+            *command,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
         stdout, stderr = await process.communicate()
         
         if process.returncode != 0:
-            logger.error(f"❌ Windows Print Error: {stderr.decode()}")
+            err_msg = stderr.decode().strip()
+            logger.error(f"❌ Windows Print Error (Code {process.returncode}): {err_msg}")
             return False
         
         logger.info(f"✅ Job sent to spooler successfully.")
         return True
+    except FileNotFoundError:
+        logger.error(f"❌ SumatraPDF Execution Failed: The system cannot find the file specified: {SUMATRA_EXE}")
+        return False
     except Exception as e:
-        logger.error(f"💥 Critical engine failure: {e}")
+        logger.error(f"💥 Critical engine failure: {str(e)}")
         return False
