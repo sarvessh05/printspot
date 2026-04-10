@@ -70,7 +70,7 @@ const SuccessPage = () => {
             Done & Finish
             <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
           </GlowButton>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Thank you for using PrintKro</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Thank you for using Print Spot</p>
         </div>
       </div>
     </PageTransition>

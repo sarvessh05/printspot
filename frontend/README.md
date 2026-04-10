@@ -1,7 +1,7 @@
 # PrintSpot — Pure Magic Printing 🪄
 **Proprietary of Print Spot Technologies**
 
-The sleek, customer-facing interface for the PrintKro Kiosk. This application handles the document upload, payment review, and physical kiosk keypad.
+The sleek, customer-facing interface for the Print Spot Kiosk. This application handles the document upload, payment review, and physical kiosk keypad.
 
 ## ✨ Key Features
 - **Modern Kiosk UI**: A premium, 4-page optimized flow for maximum speed and simplicity.
