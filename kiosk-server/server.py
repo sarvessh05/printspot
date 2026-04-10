@@ -9,7 +9,10 @@ from config import settings
 
 from routes import print_route, admin_route
 from background.watchman import watchman_loop
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 import asyncio
+import logging
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,6 +43,17 @@ app.add_middleware(
 # --- Routes inclusion ---
 app.include_router(print_route.router, prefix="/api")
 app.include_router(admin_route.router, prefix="/api")
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    from utils.logger import get_logger
+    logger = get_logger("validation_error")
+    logger.error(f"❌ Validation Error: {exc.errors()}")
+    logger.error(f"📝 Raw Body: {await request.body()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": str(await request.body())},
+    )
 
 @app.get("/api/health")
 async def health_check():

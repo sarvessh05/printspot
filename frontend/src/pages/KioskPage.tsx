@@ -84,7 +84,7 @@ const KioskPage = () => {
       const printRes = await fetch('http://localhost:5000/api/print', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(verifyData.items)
+        body: JSON.stringify(verifyData.items.map((item: any) => ({ ...item, otp: code })))
       });
 
       if (!printRes.ok) {

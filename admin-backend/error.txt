@@ -1,0 +1,149 @@
+./venv/Scripts/python : 
+Traceback (most recent 
+call last):
+At line:1 char:19
++ cd admin-backend; 
+./venv/Scripts/python 
+test_settings.py 2>&1 | 
+Out-F ...
++                   ~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (T  
+  raceback (most recent   
+  call last)::String)     
+[], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+  File "C:\Users\Lenovo\Do
+cuments\VSCode\PrintKro_Ki
+osk\admin-backend\venv\Lib
+\site-packages\pydantic_se
+ttings\sources\base.py", 
+line 548, in __call__
+    field_value = self.pre
+pare_field_value(field_nam
+e, field, field_value, 
+value_is_complex)
+                  ^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Do
+cuments\VSCode\PrintKro_Ki
+osk\admin-backend\venv\Lib
+\site-packages\pydantic_se
+ttings\sources\providers\e
+nv.py", line 131, in 
+prepare_field_value
+    raise e
+  File "C:\Users\Lenovo\Do
+cuments\VSCode\PrintKro_Ki
+osk\admin-backend\venv\Lib
+\site-packages\pydantic_se
+ttings\sources\providers\e
+nv.py", line 128, in 
+prepare_field_value
+    value = self.decode_co
+mplex_value(field_name, 
+field, value)
+            ^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^
+  File "C:\Users\Lenovo\Do
+cuments\VSCode\PrintKro_Ki
+osk\admin-backend\venv\Lib
+\site-packages\pydantic_se
+ttings\sources\base.py", 
+line 194, in 
+decode_complex_value
+    return 
+json.loads(value)
+           
+^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\P
+ython311\Lib\json\__init__
+.py", line 346, in loads
+    return 
+_default_decoder.decode(s)
+           
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\P
+ython311\Lib\json\decoder.
+py", line 337, in decode
+    obj, end = 
+self.raw_decode(s, 
+idx=_w(s, 0).end())
+               ^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+^
+  File "C:\Program Files\P
+ython311\Lib\json\decoder.
+py", line 355, in 
+raw_decode
+    raise JSONDecodeError(
+"Expecting value", s, 
+err.value) from None
+json.decoder.JSONDecodeErr
+or: Expecting value: line 
+1 column 1 (char 0)
+
+The above exception was 
+the direct cause of the 
+following exception:
+
+Traceback (most recent 
+call last):
+  File "C:\Users\Lenovo\Do
+cuments\VSCode\PrintKro_Ki
+osk\admin-backend\test_set
+tings.py", line 1, in 
+<module>
+    from config import 
+settings
+  File "C:\Users\Lenovo\Do
+cuments\VSCode\PrintKro_Ki
+osk\admin-backend\config.p
+y", line 41, in <module>
+    settings = Settings()
+               ^^^^^^^^^^
+  File "C:\Users\Lenovo\Do
+cuments\VSCode\PrintKro_Ki
+osk\admin-backend\venv\Lib
+\site-packages\pydantic_se
+ttings\main.py", line 
+242, in __init__
+    super().__init__(**__p
+ydantic_self__.__class__._
+settings_build_values(sour
+ces, init_kwargs))
+                       ^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^
+  File "C:\Users\Lenovo\Do
+cuments\VSCode\PrintKro_Ki
+osk\admin-backend\venv\Lib
+\site-packages\pydantic_se
+ttings\main.py", line 
+465, in 
+_settings_build_values
+    source_state = 
+source()
+                   
+^^^^^^^^
+  File "C:\Users\Lenovo\Do
+cuments\VSCode\PrintKro_Ki
+osk\admin-backend\venv\Lib
+\site-packages\pydantic_se
+ttings\sources\base.py", 
+line 550, in __call__
+    raise SettingsError(
+pydantic_settings.exceptio
+ns.SettingsError: error 
+parsing value for field 
+"ALLOWED_ORIGINS" from 
+source "EnvSettingsSource"

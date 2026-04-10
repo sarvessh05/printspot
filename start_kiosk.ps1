@@ -112,15 +112,15 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd admin-backend;
 # Start Kiosk Server
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd kiosk-server; title 'KIOSK-SERVER'; & '$pythonKiosk' -m uvicorn server:app --host 0.0.0.0 --port 5000 --reload"
 # Start Frontend
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd frontend; title 'KIOSK-UI'; npm run dev -- --port 5173"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd frontend; title 'KIOSK-UI'; npm run dev -- --port 8080"
 # Start Admin Frontend
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd admin-frontend; title 'ADMIN-DASHBOARD'; npm run dev -- --port 5174"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd admin-frontend; title 'ADMIN-DASHBOARD'; npm run dev -- --port 5173"
 
 Write-Host "`n🚀 ALL SYSTEMS LAUNCHED!" -ForegroundColor Green
 Write-Host "----------------------------------" -ForegroundColor Cyan
 Write-Host "Admin API:      http://localhost:8083"
 Write-Host "Kiosk API:      http://localhost:5000"
-Write-Host "Kiosk UI:       http://localhost:5173"
-Write-Host "Admin Panel:    http://localhost:5174"
+Write-Host "Kiosk UI:       http://localhost:8080/kiosk"
+Write-Host "Admin Panel:    http://localhost:5173"
 Write-Host "----------------------------------" -ForegroundColor Cyan
 Write-Host "Keep these windows open to keep the kiosk running." -ForegroundColor Gray

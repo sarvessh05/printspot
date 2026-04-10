@@ -11,10 +11,23 @@ logger = get_logger("print_engine")
 # Path to the bundled SumatraPDF or the system one
 def _get_sumatra_path() -> str:
     path = settings.SUMATRA_PDF_PATH
-    if os.path.exists(path):
-        return path
+    if path and os.path.exists(path):
+        logger.info(f"✅ SumatraPDF found at: {path}")
+        return f'"{path}"'
+    
+    # Try common locations if the user didn't specify correctly
+    common_paths = [
+        r"C:\Program Files\SumatraPDF\SumatraPDF.exe",
+        r"C:\Program Files (x86)\SumatraPDF\SumatraPDF.exe",
+        os.path.join(os.getcwd(), "SumatraPDF.exe")
+    ]
+    for p in common_paths:
+        if os.path.exists(p):
+            logger.info(f"💾 SumatraPDF auto-detected at: {p}")
+            return f'"{p}"'
+
     # Fallback to system PATH
-    logger.warning(f"⚠️ SumatraPDF not found at {path}. Falling back to system PATH.")
+    logger.warning(f"⚠️ SumatraPDF not found in common paths. Falling back to system 'SumatraPDF.exe'.")
     return "SumatraPDF.exe"
 
 SUMATRA_EXE = _get_sumatra_path()

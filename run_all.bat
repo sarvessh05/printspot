@@ -54,12 +54,12 @@ echo ===============================================
 :: Launching in separate windows
 start "Cloud API [8083]" cmd /k "cd admin-backend && %PYTHON_API% -m uvicorn server:app --host 0.0.0.0 --port 8083 --reload"
 start "Hardware Kiosk [5000]" cmd /k "cd kiosk-server && %PYTHON_KIOSK% -m uvicorn server:app --host 0.0.0.0 --port 5000 --reload"
-start "Kiosk UI [5173]" cmd /k "cd frontend && npm run dev -- --port 5173"
-start "Admin Panel [5174]" cmd /k "cd admin-frontend && npm run dev -- --port 5174"
+start "Kiosk UI [8080]" cmd /k "cd frontend && npm run dev -- --port 8080"
+start "Admin Panel [5173]" cmd /k "cd admin-frontend && npm run dev -- --port 5173"
 
 echo =====================================
-echo [*] Kiosk UI:    http://localhost:5173
-echo [*] Admin Panel: http://localhost:5174
+echo [*] Kiosk UI:    http://localhost:8080/kiosk
+echo [*] Admin Panel: http://localhost:5173
 echo =====================================
 echo SYSTEM READY FOR DEMO! 🚀
 pause
