@@ -13,8 +13,10 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AboutUs from "./pages/AboutUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
-import AdminTrigger from "./components/AdminTrigger";
 import HelpButton from "./components/HelpButton";
+import { FilesProvider } from "./context/FilesContext";
+
+import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
@@ -37,18 +39,32 @@ const AnimatedRoutes = () => {
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <AdminTrigger />
-        <HelpButton />
-        <Toaster />
-        <Sonner />
-        <AnimatedRoutes />
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  useEffect(() => {
+    // Wake up the backend (Render Free Tier "Sleeping Beauty")
+    const backendUrl = import.meta.env.VITE_EC2_IP;
+    if (backendUrl) {
+      console.log("🚀 Waking up backend at:", backendUrl);
+      fetch(`${backendUrl}/health`).catch(() => {
+        // Silently ignore errors - we just need to hit the server
+      });
+    }
+  }, []);
+
+  return (
+    <FilesProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <BrowserRouter>
+            <HelpButton />
+            <Toaster />
+            <Sonner />
+            <AnimatedRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </FilesProvider>
+  );
+};
 
 export default App;

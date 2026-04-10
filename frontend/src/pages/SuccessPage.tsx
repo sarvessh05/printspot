@@ -3,12 +3,19 @@ import { Check, ArrowRight, Printer, Scissors, Smartphone } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { PageTransition } from "@/components/PageTransition";
 import { GlowButton } from "@/components/GlowButton";
+import { useFiles } from "@/context/FilesContext";
+import { useEffect } from "react";
 
 const SuccessPage = () => {
   const navigate = useNavigate();
+  const { clearFiles } = useFiles();
 
   const location = useLocation();
   const { otp = "000000" } = location.state || {};
+
+  useEffect(() => {
+    clearFiles();
+  }, [clearFiles]);
 
   const steps = [
     { icon: <Printer className="w-6 h-6" />, text: "Locate the physical kiosk screen" },

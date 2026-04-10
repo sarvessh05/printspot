@@ -12,26 +12,11 @@ import {
 import { countPagesFast, convertImageToPdf } from "@/lib/pdf-utils";
 import { toast } from "sonner";
 import * as pdfjs from 'pdfjs-dist';
+import { useFiles, UploadedFile } from "@/context/FilesContext";
 
 // Robust worker configuration for Vite
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-
-interface UploadedFile {
-  id: string;
-  name: string;
-  size: number;
-  pages: number;
-  fileObj: File;
-  mode: "bw" | "color" | "mixed";
-  copies: number;
-  isTwoSided: boolean;
-  originalPageCount: number;
-  printRange: "all" | "custom";
-  customRangeString: string;
-  colorPagesString: string;
-  paperSize: "a4" | "letter";
-}
 
 const floatingShapes = [
   { x: "10%", y: "20%", size: 80, delay: 0, duration: 6 },
@@ -133,7 +118,7 @@ const SlidingToggle = ({ options, value, onChange, id }: { options: string[], va
 
 const OrderPage = () => {
   const navigate = useNavigate();
-  const [files, setFiles] = useState<UploadedFile[]>([]);
+  const { files, setFiles } = useFiles();
   const [isDragging, setIsDragging] = useState(false);
   const [isAbsorbing, setIsAbsorbing] = useState(false);
   const [pricing, setPricing] = useState({ bw: 2, color: 10 });

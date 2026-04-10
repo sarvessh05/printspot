@@ -39,6 +39,11 @@ Thumbs.db
 kiosk_state.json
 temp_prints/
 logs/
+*.log
+*.db
+error.txt
+printername.txt
+uninstall.txt
 
 # Supabase Local
 .supabase/
@@ -46,3 +51,6 @@ logs/
 # Dev scratch files
 flow_audit_report.md
 PrintSpot_Analysis_and_Tasks.md
+bugs.md
+implementation_report.md
+task.md
