@@ -43,27 +43,30 @@ Open four terminal tabs and run the following in each:
 
 **Terminal 1: Cloud Admin API**
 ```powershell
-cd admin-backend
-.\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 8083
+cd admin-backend ; .\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 8083 --reload
 ```
 
 **Terminal 2: Kiosk Hardware Server**
 ```powershell
-cd kiosk-server
-.\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 5000
+cd kiosk-server ; .\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 5000 --reload
 ```
 
 **Terminal 3: Kiosk Frontend**
-```cmd
-cd frontend
-npm run dev -- --port 5173
+```powershell
+cd frontend ; npm run dev -- --port=5173
 ```
 
 **Terminal 4: Admin Panel UI**
-```cmd
-cd admin-frontend
-npm run dev -- --port 5174
+```powershell
+cd admin-frontend ; npm run dev -- --port=5174
 ```
+
+---
+
+## ⚖️ Ownership & License
+
+Copyright © 2026 **Print Spot Technologies**. All rights reserved.
+This system is proprietary software. Unauthorized reproduction, modification, or distribution is prohibited.
 
 ---
 

@@ -1,39 +1,24 @@
 # Cloud Admin API (Central API) ☁️
+**Proprietary of Print Spot Technologies**
 
-This is the centralized backend for all your kiosks. Its primary role is to handle global state like payments, metrics, and remote commands.
+This is the centralized brain for all kiosks in the fleet. It manages payments, order verification, and remote orchestration.
 
 ## 🚀 Key Features
-- **Razorpay Orders**: Securely generates order IDs for customer payments (`/api/payments/create-order`).
-- **OTP Generation**: Fetches a unique print OTP from Supabase after successful payment.
-- **Unified Health**: Aggregates health reports from all kiosks for the Admin Dashboard.
-- **Admin Authentication**: Validates the `X-Admin-Password` header for secure admin tasks.
+- **Razorpay Integration**: Handles secure payment order creation and verification.
+- **OTP Brain**: Manages the generation and validation of secure 6-digit print codes.
+- **Fleet Orchestration**: Forwards remote commands (Restart/Shutdown) to the correct Kiosk Server.
+- **SupaBase Link**: Primary interface for the centralized PostgreSQL database.
 
-## ⚙️ Configuration
-The admin-backend uses its own **`.env`** file at `admin-backend/.env`.
-
-**Required Variables**:
-- `RAZORPAY_KEY_ID`: Your Razorpay Key ID (rzp_test_...).
-- `RAZORPAY_KEY_SECRET`: Your Razorpay Secret.
-- `ADMIN_MASTER_PASSWORD`: For verifying the Dashboard logins.
-- `SUPABASE_SERVICE_ROLE_KEY`: Required for write-level access to the global DB.
-
-## ⚠️ Notes
-- **Authentication**: If you get a **500 (Internal Server Error)** on "Authentication failed", double-check your Razorpay keys in the `.env`. 
-- **Port Allocation**: Default port is **8083**. Avoid 8080 or 8081 if your local machine is holding them in "TIME_WAIT" state.
-
-## 🛠️ Run Locally
+## 🚀 Dry Run Command
 ```powershell
-# Create venv if it doesn't exist
-python -m venv venv
-.\venv\Scripts\activate
-pip install -r requirements.txt
-
-# Start Server
-.\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 8083
+cd admin-backend ; .\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 8083 --reload
 ```
 
-## 📦 Main Libraries
-- `fastapi`
-- `uvicorn`
-- `razorpay` (Payment SDK)
-- `pydantic-settings` (Config management)
+## ⚙️ Configuration
+Located at `admin-backend/.env`:
+- `RAZORPAY_KEY_ID`: Your active Razorpay credentials.
+- `ADMIN_MASTER_PASSWORD`: Secret for the Cloud Console access.
+- `SUPABASE_URL` & `SUPABASE_KEY`: Database connection strings.
+
+---
+Copyright © 2026 **Print Spot Technologies**. All rights reserved.

@@ -1,33 +1,28 @@
-# Kiosk Hardware Server (Local Backend) ⚡
+# Kiosk Hardware Server (Local Backend) 🎛️
+**Proprietary of Print Spot Technologies**
 
-This is the local Python server that interacts with the hardware (printer) at the kiosk. It must be running on the PC connected to the printer.
+This is the bridge between the Cloud API and the physical printing hardware. It must run locally on the Kiosk PC.
 
 ## 🚀 Key Features
-- **Silent Printing**: Uses **SumatraPDF** to print PDF files without user interaction.
-- **Printer Monitoring**: Checks `win32print` to report "Ready", "Offline", or "Ink Low" status.
-- **Supabase Sync**: Notifies the main database when a print job is successfully completed.
-- **Health Checks**: Provides a `/health` endpoint for the frontend to confirm connectivity.
+- **Silent Printing**: Uses **SumatraPDF** to print PDF files automatically upon OTP verification.
+- **Hardware Monitoring**: Checks `win32print` and SNMP to report "Ready", "Offline", or "Jam" status.
+- **Remote Control**: Executes OS-level commands (Restart/Shutdown) received from the Cloud Console.
+- **Auto-Recovery**: Built-in "heartbeat" to ensure the link to the cloud is always active.
 
-## ⚙️ Configuration
-The kiosk server uses its own **`.env`** file at `kiosk-server/.env`.
-
-**Required Variables**:
-- `PRINTER_NAME`: Full name of the Windows printer (e.g. "Canon G2010 series").
-- `SUMATRA_PDF_PATH`: Local path to the SumatraPDF executable.
-- `MOCK_PRINTER`: Set to `True` for testing without actual hardware. 
-- `EC2_IP`: URL of the Cloud Admin API ([http://localhost:8083](http://localhost:8083)).
-
-## 🛠️ Run Locally
+## 🚀 Dry Run Command
 ```powershell
-# Create venv if it doesn't exist
-python -m venv venv
-.\venv\Scripts\activate
-pip install -r requirements.txt
-
-# Start Server
-.\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 5000
+cd kiosk-server ; .\venv\Scripts\python -m uvicorn server:app --host 0.0.0.0 --port 5000 --reload
 ```
 
-## ⚠️ Notes
-- **Administrator Privileges**: Printing on Windows sometimes requires running the terminal as Administrator.
-- **SumatraPDF**: Must be installed. Default path: `C:\Program Files\SumatraPDF\SumatraPDF.exe`.
+## ⚙️ Configuration
+Located at `kiosk-server/.env`:
+- `PRINTER_NAME`: Full name of the Windows printer queue.
+- `SUMATRA_PDF_PATH`: Local path to SumatraPDF.exe.
+- `PRINTER_IP`: IP address for SNMP hardware level checks.
+
+## ⚠️ Important Notes
+- **Admin Access**: If printing fails, run your terminal as **Administrator**.
+- **Kiosk Mode**: For best performance, ensure the OS is locked down to only run this and the browser.
+
+---
+Copyright © 2026 **Print Spot Technologies**. All rights reserved.

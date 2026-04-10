@@ -1,32 +1,23 @@
-# Admin Dashboard UI 📊
+# Cloud Console (Fleet Dashboard) 📊
+**Proprietary of Print Spot Technologies**
 
-This is the centralized management portal for the Print Spot Kiosk network.
+The centralized "Mission Control" for the entire Print Spot Kiosk network. This dashboard allows for remote monitoring, revenue tracking, and hardware power management.
 
 ## 🚀 Key Features
-- **Dashboard Overview**: Detailed statistics for daily sales, revenue, and kiosk health.
-- **Real-time Sales Trend**: Animated charts for sales data via **Chart.js** and **React-Chartjs-2**.
-- **Kiosk Monitoring**: Live list of kiosks showing the printer's current online/offline and ink status.
-- **Pricing Manager**: Directly edit the pricing per page for black & white or color prints.
-- **Order History**: View recent transactions and their print status.
+- **Fleet Overview**: High-fidelity charts showing revenue trends and machine utilization.
+- **Hardware Health Monitor**: Real-time stats on paper levels, ink status, and connection heartbeats.
+- **Remote Power Controls**: Trigger OS restarts, shutdowns, or app refreshes on any kiosk in the network.
+- **Pricing Manager**: Set global or machine-specific pricing for B&W and Color prints.
 
-## ⚙️ Configuration
-The admin-frontend uses its own **`.env`** file at `admin-frontend/.env`.
-
-**Required Variables**:
-- `VITE_BACKEND_URL`: URL of the Cloud Admin API ([http://localhost:8083](http://localhost:8083)).
-- `VITE_ADMIN_PASSWORD`: Master password for the admin dashboard.
-
-## 🛠️ Run Locally
-```cmd
-npm run dev -- --port 5174
+## 🚀 Dry Run Command (Port 5174)
+```powershell
+cd admin-frontend ; npm run dev -- --port=5174
 ```
 
-## ⚠️ Troubleshooting
-- **Failed to resolve import "chart.js"**: This happens if the dependencies are not correctly cached. I've already installed them via `npm install chart.js react-chartjs-2`. 
-- **Port Conflict**: If 5174 is in use, use `npx vite --port 5174 --force` to override and clear optimization cache.
+## ⚙️ Configuration
+Located at `admin-frontend/.env`:
+- `VITE_BACKEND_URL`: Points to the Cloud Admin API.
+- `VITE_ADMIN_PASSWORD`: For dashboard authentication.
 
-## 📦 Main Dependencies
-- `chart.js`
-- `react-chartjs-2`
-- `lucide-react` (icons)
-- `react-router-dom` (navigation)
+---
+Copyright © 2026 **Print Spot Technologies**. All rights reserved.

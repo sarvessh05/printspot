@@ -5,14 +5,14 @@ import wmi
 from typing import Optional, Dict
 from config import settings
 from .logger import get_logger
-from pysnmp.hlapi.asyncio import (
+from pysnmp.hlapi.v3arch.asyncio import (
     SnmpEngine,
     CommunityData,
     UdpTransportTarget,
     ContextData,
     ObjectType,
     ObjectIdentity,
-    get_cmd
+    getCmd as get_cmd
 )
 
 logger = get_logger("printer_status")
