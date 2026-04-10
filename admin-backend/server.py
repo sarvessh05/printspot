@@ -20,18 +20,24 @@ app = FastAPI(
 )
 
 # CORS Configuration
-# NOTE: When allow_credentials=True, allow_origins cannot be ["*"]
 allowed_origins = settings.allowed_origins_list
-if "*" in allowed_origins and len(allowed_origins) > 1:
-    # If both * and specific domains are provided, prioritize specific domains for safety
+
+# Hardcoded safety fallbacks for production
+prod_domains = ["https://www.theprintspot.in", "https://theprintspot.in"]
+for domain in prod_domains:
+    if domain not in allowed_origins:
+        allowed_origins.append(domain)
+
+# Strip any accidental wildcards if specific domains are present
+if len(allowed_origins) > 1 and "*" in allowed_origins:
     allowed_origins = [o for o in allowed_origins if o != "*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins if "*" not in allowed_origins else ["*"],
-    allow_credentials=True if "*" not in allowed_origins else False,
-    allow_methods=["*"],  # Allow all methods (GET, POST, OPTIONS, etc.)
-    allow_headers=["*"],  # Allow all headers
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Register Routers
