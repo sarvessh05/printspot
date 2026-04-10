@@ -55,13 +55,22 @@ async def print_jobs_endpoint(jobs: List[PrintJob]):
     logger.info(f"[INCOMING] REQUEST | OTP: {otp} | Files: {len(jobs)}")
 
     # 1. PRE-FLIGHT CHECKS: PAPER & INergy
+    logger.info(f"🔍 [CHECK] Calculating required pages for {len(jobs)} jobs...")
     import math
     required_pages = 0
     for j in jobs:
-        pages_per_copy = math.ceil((int(j.totalPages) or 1) / 2) if j.isTwoSided else (int(j.totalPages) or 1)
-        required_pages += pages_per_copy * (int(j.copies) or 1)
+        try:
+             # Handle totalPages being string or int
+            t_pages = int(j.totalPages) if j.totalPages else 1
+            pages_per_copy = math.ceil(t_pages / 2) if j.isTwoSided else t_pages
+            required_pages += pages_per_copy * (int(j.copies) or 1)
+        except Exception as e:
+            logger.error(f"❌ Page calculation error: {e}")
+            required_pages += 1
         
+    logger.info(f"🔍 [CHECK] Total pages required: {required_pages}. Fetching kiosk state...")
     state = await get_kiosk_state()
+    logger.info(f"🔍 [CHECK] State fetched (Paper: {state.get('paper')}). Checking hardware status...")
     
     if state.get("paper", 0) < required_pages or state.get("ink", 0) < required_pages:
         issue = "OUT_OF_PAPER" if state.get("paper", 0) < required_pages else "OUT_OF_INK"
@@ -72,7 +81,10 @@ async def print_jobs_endpoint(jobs: List[PrintJob]):
         raise HTTPException(status_code=400, detail=issue)
 
     # 2. HARDWARE CHECK: CONNECTIVITY & JAM
+    logger.info("🔍 [CHECK] Querying printer_tracker.get_comprehensive_status()...")
     status_info = await printer_tracker.get_comprehensive_status()
+    logger.info(f"🔍 [CHECK] Hardware status result: {status_info['status']}")
+    
     if not status_info["is_online"]:
         logger.error("[FAILED] MACHINE OFFLINE. Reverting OTPs...")
         await notifier.send_alert(f"🖨️ MACHINE OFFLINE — OTP: {otp} reverted.")

@@ -10,9 +10,11 @@ from .logger import get_logger
 try:
     import win32print
     import wmi
+    import pythoncom
 except ImportError:
     win32print = None
     wmi = None
+    pythoncom = None
 
 from pysnmp.hlapi.v3arch.asyncio import (
     SnmpEngine,
@@ -21,7 +23,7 @@ from pysnmp.hlapi.v3arch.asyncio import (
     ContextData,
     ObjectType,
     ObjectIdentity,
-    getCmd as get_cmd
+    get_cmd
 )
 
 logger = get_logger("printer_status")
@@ -49,8 +51,12 @@ class PrinterStatusTracker:
 
     def _sync_check_usb(self) -> dict:
         """Blocking WMI call to be run in thread."""
-        if not wmi:
+        if not wmi or not pythoncom:
             return {}
+        
+        # COM must be initialized for each thread in the pool
+        pythoncom.CoInitialize()
+        
         printers_status = {}
         configured_names = {
             "bw": settings.PRINTER_BW,
@@ -60,10 +66,11 @@ class PrinterStatusTracker:
         }
         
         try:
-            if not self._wmi_client:
-                self._wmi_client = wmi.WMI()
+            logger.debug("🧵 Running WMI check in thread...")
+            # Create a localized WMI client for this thread
+            c = wmi.WMI()
+            printers = c.Win32_Printer()
             
-            printers = self._wmi_client.Win32_Printer()
             for key, name in configured_names.items():
                 p_obj = next((p for p in printers if p.Name == name), None)
                 if not p_obj:
@@ -81,8 +88,9 @@ class PrinterStatusTracker:
             return printers_status
         except Exception as e:
             logger.error(f"💥 WMI Printer Check Failed: {e}")
-            self._wmi_client = None # Reset on failure
             return {k: "WMI_ERROR" for k in configured_names}
+        finally:
+            pythoncom.CoUninitialize()
 
     async def check_usb_connected(self) -> dict:
         return await asyncio.to_thread(self._sync_check_usb)
@@ -190,6 +198,7 @@ class PrinterStatusTracker:
             # Final check via win32print if possible
             if is_online and win32print and system_status == "NORMAL":
                 def _check_win32_status():
+                    if pythoncom: pythoncom.CoInitialize()
                     try:
                         name = win32print.GetDefaultPrinter()
                         h = win32print.OpenPrinter(name)
@@ -198,6 +207,8 @@ class PrinterStatusTracker:
                         if info['Status'] & 0x00000008: return "JAMMED"
                         return "NORMAL"
                     except: return "NORMAL"
+                    finally:
+                        if pythoncom: pythoncom.CoUninitialize()
                 system_status = await asyncio.to_thread(_check_win32_status)
 
             result = {
