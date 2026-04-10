@@ -81,13 +81,16 @@ async def print_pdf(file_path: Path, options: Dict) -> bool:
         str(file_path)
     ]
     
+    # The "Windows Way" to ensure all spaces are quoted correctly
+    cmd_str = subprocess.list2cmdline(command)
+    
     logger.info(f"🚀 Using Printer: {printer_name}")
-    logger.info(f"📋 Command: {' '.join(command)}")
+    logger.info(f"📋 Command: {cmd_str}")
 
     try:
-        # Pass the list directly to exec - no shell quoting issues
-        process = await asyncio.create_subprocess_exec(
-            *command,
+        # Pass the sanitized string to shell for maximum compatibility
+        process = await asyncio.create_subprocess_shell(
+            cmd_str,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
