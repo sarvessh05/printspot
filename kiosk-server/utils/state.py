@@ -9,14 +9,19 @@ STATE_FILE = settings.STATE_FILE
 # Global lock for thread-safe/async-safe file access
 _lock = asyncio.Lock()
 
+def _sync_save(state: dict):
+    """Blocking write to be used internally or in thread."""
+    content = json.dumps(state, indent=2)
+    STATE_FILE.write_text(content)
+
 async def get_kiosk_state() -> dict:
     """Reads the current state from the JSON file."""
     async with _lock:
         if not STATE_FILE.exists():
             # Default state if file is missing
-            default_state = {"paper": 500, "ink": 6000}
-            await save_kiosk_state(default_state)
-            return default_state
+            state = {"paper": 500, "ink": 6000}
+            _sync_save(state)
+            return state
             
         try:
             content = STATE_FILE.read_text()
@@ -28,8 +33,7 @@ async def save_kiosk_state(state: dict):
     """Writes the given state to the JSON file."""
     async with _lock:
         try:
-            content = json.dumps(state, indent=2)
-            STATE_FILE.write_text(content)
+            _sync_save(state)
         except Exception as e:
             print(f"Error saving state: {e}")
 
