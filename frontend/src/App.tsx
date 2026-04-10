@@ -5,8 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AnimatePresence } from "framer-motion";
 import LandingPage from "./pages/LandingPage";
-import UploadPage from "./pages/UploadPage";
-import ReviewPage from "./pages/ReviewPage";
+import OrderPage from "./pages/OrderPage";
 import PaymentPage from "./pages/PaymentPage";
 import SuccessPage from "./pages/SuccessPage";
 import KioskPage from "./pages/KioskPage";
@@ -25,8 +24,7 @@ const AnimatedRoutes = () => {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/upload" element={<UploadPage />} />
-        <Route path="/review" element={<ReviewPage />} />
+        <Route path="/upload" element={<OrderPage />} />
         <Route path="/payment" element={<PaymentPage />} />
         <Route path="/success" element={<SuccessPage />} />
         <Route path="/kiosk" element={<KioskPage />} />

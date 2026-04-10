@@ -473,7 +473,13 @@ const ReviewPage = () => {
             </div>
             
             <button 
-              onClick={() => navigate("/payment", { state: { total: grandTotal, files } })}
+              onClick={() => {
+                const filesWithCost = files.map(f => ({
+                  ...f,
+                  calculatedCost: calculateFileCost(f)
+                }));
+                navigate("/payment", { state: { total: grandTotal, files: filesWithCost } });
+              }}
               className="bg-blue-600 hover:bg-blue-500 text-white h-20 px-10 rounded-[2.5rem] font-black text-lg transition-all active:scale-95 flex items-center gap-3 shadow-xl shadow-blue-500/30 group overflow-hidden relative"
             >
               <span className="relative z-10">Confirm & Pay</span>

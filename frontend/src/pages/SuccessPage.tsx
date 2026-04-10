@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Check, ArrowRight, Printer, Scissors, Smartphone } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { PageTransition } from "@/components/PageTransition";
 import { GlowButton } from "@/components/GlowButton";
 

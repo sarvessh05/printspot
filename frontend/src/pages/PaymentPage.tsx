@@ -16,6 +16,45 @@ declare global {
   }
 }
 
+const Receipt = ({ total, files, otp }: { total: number, files: any[], otp?: string }) => (
+  <motion.div 
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="w-full mb-8 text-left"
+  >
+    {otp && (
+      <div className="bg-primary text-white p-6 rounded-3xl text-center mb-6 shadow-xl shadow-primary/20">
+        <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Your Print Code</p>
+        <p className="text-4xl font-black tracking-wider">{otp}</p>
+      </div>
+    )}
+
+    <div className="glass-strong rounded-[2rem] border border-primary/10 overflow-hidden divide-y divide-primary/5">
+      <div className="bg-primary/5 px-6 py-4">
+        <h3 className="text-xs font-black uppercase tracking-widest text-primary/60">Order Breakdown</h3>
+      </div>
+      <div className="px-6 py-4 space-y-4 max-h-[250px] overflow-y-auto no-scrollbar">
+        {files.map((file, i) => (
+          <div key={i} className="flex justify-between items-start gap-4">
+            <div className="flex-grow">
+              <p className="text-sm font-bold text-foreground line-clamp-1 truncate max-w-[200px]">{file.name}</p>
+              <p className="text-[10px] text-muted-foreground font-medium uppercase truncate">
+                {file.pages} Pgs · {file.copies} Qty · {file.mode}
+              </p>
+            </div>
+            <span className="text-sm font-black text-foreground">₹{file.calculatedCost}</span>
+          </div>
+        ))}
+      </div>
+      <div className="bg-primary/5 px-6 py-5 flex justify-between items-center">
+        <span className="text-sm font-bold text-muted-foreground">Grand Total</span>
+        <span className="text-2xl font-black text-primary">₹{total}</span>
+      </div>
+    </div>
+  </motion.div>
+);
+
+
 const PaymentPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -94,7 +133,7 @@ const PaymentPage = () => {
                 is_two_sided: fileItem.isTwoSided,
                 print_range: fileItem.printRange === 'all' ? 'All Pages' : fileItem.customRangeString,
                 total_pages: parseInt(fileItem.pages),
-                total_amount: Math.round(total / files.length),
+                total_amount: fileItem.calculatedCost,
                 unique_name: uniqueName,
                 color_pages: fileItem.colorPagesString,
                 paper_size: fileItem.paperSize || "a4"
@@ -168,20 +207,22 @@ const PaymentPage = () => {
   }, [step, navigate, realOtp]);
 
   return (
-    <PageTransition className="min-h-screen gradient-mesh flex items-center justify-center">
+    <PageTransition className="min-h-screen gradient-mesh flex items-center justify-center py-12">
       <div className="max-w-md w-full mx-auto px-6">
         {step === "pay" && (
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="text-center">
-            <h1 className="text-4xl font-display font-bold mb-2">Complete Payment</h1>
-            <p className="text-muted-foreground mb-8">Amount: ₹{total}</p>
-            <div className="glass-strong rounded-[2.5rem] p-8 mb-6 border border-primary/10">
-              <p className="text-sm text-muted-foreground mb-6">Secure checkout for {files.length} files</p>
+            <h1 className="text-4xl font-display font-bold mb-2">Final Bill</h1>
+            <p className="text-muted-foreground mb-4">Review your print order</p>
+            
+            <Receipt total={total} files={files} />
+
+            <div className="glass-strong rounded-[2.5rem] p-6 mb-6 border border-primary/10">
               <GlowButton size="lg" onClick={handlePay} className="w-full h-14">
-                Pay ₹{total}
+                Secure Payment
               </GlowButton>
             </div>
             <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="w-4 h-4 inline mr-1" /> Go back
+              <ArrowLeft className="w-4 h-4 inline mr-1" /> Edit Order
             </button>
           </motion.div>
         )}
@@ -195,7 +236,7 @@ const PaymentPage = () => {
         )}
 
         {step === "otp" && (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center relative">
             <motion.div
               animate={{ boxShadow: ["0 0 20px hsl(var(--primary) / 0.1)", "0 0 40px hsl(var(--primary) / 0.2)", "0 0 20px hsl(var(--primary) / 0.1)"] }}
               transition={{ duration: 2, repeat: Infinity }}
@@ -238,16 +279,6 @@ const PaymentPage = () => {
                 >
                   I've Saved the Code
                 </GlowButton>
-                
-                <button 
-                  onClick={() => window.print()} 
-                  className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-2 mx-auto"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  Save as Digital Receipt
-                </button>
               </div>
             </motion.div>
           </motion.div>
