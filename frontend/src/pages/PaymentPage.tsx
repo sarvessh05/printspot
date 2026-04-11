@@ -157,16 +157,7 @@ const PaymentPage = () => {
             const data = await batchResponse.json();
             if (!batchResponse.ok) throw new Error(data.detail || "Verification failed");
 
-            setRealOtp(data.otp);
-            setStep("otp");
-            
-            // Animate OTP reveal
-            let i = 0;
-            const interval = setInterval(() => {
-              i++;
-              setRevealedDigits(i);
-              if (i >= OTP_LENGTH) clearInterval(interval);
-            }, 150);
+            navigate("/success", { state: { otp: data.otp } });
 
           } catch (verifyErr: any) {
             console.error(verifyErr);
@@ -235,54 +226,6 @@ const PaymentPage = () => {
           </motion.div>
         )}
 
-        {step === "otp" && (
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center relative">
-            <motion.div
-              animate={{ boxShadow: ["0 0 20px hsl(var(--primary) / 0.1)", "0 0 40px hsl(var(--primary) / 0.2)", "0 0 20px hsl(var(--primary) / 0.1)"] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="glass-strong rounded-[3rem] p-10 md:p-12 border border-primary/20 relative overflow-hidden"
-            >
-              {/* Critical Warning Banner */}
-              <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 mb-8 flex items-center gap-4 text-left">
-                <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center shrink-0">
-                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-amber-600 dark:text-amber-400 font-black text-xs uppercase tracking-wider">Unmanned Kiosk Reminder</p>
-                  <p className="text-sm font-medium leading-tight">Take a screenshot or memorise this code. You <b>CANNOT</b> print without it.</p>
-                </div>
-              </div>
-
-              <h2 className="text-3xl font-display font-bold mb-2">Order Confirmed!</h2>
-              <p className="text-sm text-muted-foreground mb-10 italic">Your digital print ticket is ready</p>
-
-              <div className="flex justify-center gap-3 mb-10">
-                {realOtp.split("").map((digit, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 20, scale: 0.5 }}
-                    animate={i < revealedDigits ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 20, scale: 0.5 }}
-                    className="w-12 h-16 rounded-2xl bg-primary/5 border-2 border-primary/20 flex items-center justify-center font-display font-black text-3xl text-primary shadow-inner"
-                  >
-                    {digit}
-                  </motion.div>
-                ))}
-              </div>
-
-              <div className="space-y-4">
-                <GlowButton 
-                  size="lg" 
-                  onClick={() => setStep("success")} 
-                  className="w-full h-14 text-lg font-bold shadow-xl"
-                >
-                  I've Saved the Code
-                </GlowButton>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
 
         {step === "success" && (
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-center">

@@ -106,17 +106,17 @@ const KioskPage = () => {
   };
 
   return (
-    <PageTransition className="min-h-screen bg-slate-950 flex items-center justify-center p-6 overflow-hidden relative">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.1),transparent)]" />
+    <PageTransition className="min-h-screen bg-slate-50 flex items-center justify-center p-6 overflow-hidden relative">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.05),transparent)]" />
       
       <div className="max-w-sm w-full mx-auto text-center relative z-10">
         {/* Logo */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-12 flex flex-col items-center">
-          <div className="w-24 h-24 rounded-3xl bg-white p-4 shadow-2xl shadow-cyan-500/20 mb-6 flex items-center justify-center">
+          <div className="w-24 h-24 rounded-3xl bg-white p-4 shadow-xl shadow-cyan-500/10 mb-6 flex items-center justify-center border border-slate-100">
             <Printer className="w-12 h-12 text-cyan-500" />
           </div>
-          <h1 className="text-3xl font-display font-bold text-white tracking-tight">PrintSpot <span className="text-cyan-400 text-lg align-top uppercase ml-1">Kiosk</span></h1>
-          <p className="text-slate-400 text-sm mt-1 uppercase tracking-[0.3em] font-semibold">Self-Service Station</p>
+          <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight">PrintSpot <span className="text-cyan-600 text-lg align-top uppercase ml-1">Kiosk</span></h1>
+          <p className="text-slate-500 text-sm mt-1 uppercase tracking-[0.3em] font-semibold">Self-Service Station</p>
         </motion.div>
 
         {state === "input" && (
@@ -131,7 +131,7 @@ const KioskPage = () => {
                     borderColor: "rgba(34, 211, 238, 0.6)",
                     backgroundColor: "rgba(34, 211, 238, 0.05)"
                   } : {}}
-                  className="w-12 h-16 rounded-2xl border-2 border-slate-800 bg-slate-900/50 flex items-center justify-center font-display text-3xl font-bold text-white shadow-inner transition-all"
+                  className="w-12 h-16 rounded-2xl border-2 border-slate-200 bg-white flex items-center justify-center font-display text-3xl font-bold text-slate-900 shadow-sm transition-all"
                 >
                   {code[i] || ""}
                 </motion.div>
@@ -144,15 +144,15 @@ const KioskPage = () => {
                 <RippleButton
                   key={n}
                   onClick={() => handleKeyPress(String(n))}
-                  className="h-16 rounded-2xl bg-slate-900 border border-slate-800 text-white font-display text-2xl font-bold hover:bg-slate-800 hover:border-slate-700 transition-all active:scale-95 flex items-center justify-center"
+                  className="h-16 rounded-2xl bg-white border border-slate-200 text-slate-900 font-display text-2xl font-bold hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 flex items-center justify-center shadow-sm"
                 >
                   {n}
                 </RippleButton>
               ))}
-              <RippleButton onClick={handleDelete} className="h-16 rounded-2xl bg-slate-950 border border-slate-900 text-slate-400 hover:text-white hover:bg-red-900/20 transition-all flex items-center justify-center">
+              <RippleButton onClick={handleDelete} className="h-16 rounded-2xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all flex items-center justify-center">
                 <Delete className="w-6 h-6" />
               </RippleButton>
-              <RippleButton onClick={() => handleKeyPress("0")} className="h-16 rounded-2xl bg-slate-900 border border-slate-800 text-white font-display text-2xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center">
+              <RippleButton onClick={() => handleKeyPress("0")} className="h-16 rounded-2xl bg-white border border-slate-200 text-slate-900 font-display text-2xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center shadow-sm">
                 0
               </RippleButton>
               <RippleButton
@@ -160,8 +160,8 @@ const KioskPage = () => {
                 disabled={code.length !== 6}
                 className={`h-16 rounded-2xl font-display font-bold text-base tracking-wider transition-all shadow-lg ${
                   code.length === 6 
-                    ? "bg-cyan-500 text-white shadow-cyan-500/40 hover:bg-cyan-400 hover:scale-[1.02]" 
-                    : "bg-slate-900 text-slate-700 pointer-events-none"
+                    ? "bg-cyan-500 text-white shadow-cyan-500/20 hover:bg-cyan-600 hover:scale-[1.02]" 
+                    : "bg-slate-200 text-slate-400 pointer-events-none"
                 }`}
               >
                 PROCEED
@@ -171,44 +171,44 @@ const KioskPage = () => {
         )}
 
         {state === "verifying" && (
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="py-12 bg-slate-900/40 rounded-[3rem] border border-slate-800">
-            <Loader2 className="w-16 h-16 text-cyan-400 animate-spin mx-auto mb-6" />
-            <h2 className="text-xl font-bold text-white mb-2">Verifying Code</h2>
-            <p className="text-slate-400 text-sm animate-pulse">Contacting secure cloud...</p>
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="py-12 bg-white rounded-[3rem] border border-slate-200 shadow-xl">
+            <Loader2 className="w-16 h-16 text-cyan-500 animate-spin mx-auto mb-6" />
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Verifying Code</h2>
+            <p className="text-slate-500 text-sm animate-pulse">Contacting secure cloud...</p>
           </motion.div>
         )}
 
         {state === "printing" && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-12 bg-slate-900/40 rounded-[3rem] border border-slate-800">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-12 bg-white rounded-[3rem] border border-slate-200 shadow-xl">
             <div className="relative w-24 h-24 mx-auto mb-8">
-               <Printer className="w-24 h-24 text-cyan-400 animate-bounce" />
-               <div className="absolute -bottom-2 left-0 right-0 h-1 bg-cyan-400/20 blur-md rounded-full animate-pulse" />
+               <Printer className="w-24 h-24 text-cyan-500 animate-bounce" />
+               <div className="absolute -bottom-2 left-0 right-0 h-1 bg-cyan-500/10 blur-md rounded-full animate-pulse" />
             </div>
-            <h2 className="text-2xl font-display font-bold text-white mb-6">Printing Document</h2>
+            <h2 className="text-2xl font-display font-bold text-slate-900 mb-6">Printing Document</h2>
             
             <div className="px-10">
-              <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden mb-3">
+              <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden mb-3">
                 <motion.div
-                  className="h-full bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]"
+                  className="h-full bg-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.3)]"
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
                 />
               </div>
-              <p className="text-cyan-400 font-bold text-sm tracking-widest">{progress}% COMPLETE</p>
+              <p className="text-cyan-600 font-bold text-sm tracking-widest">{progress}% COMPLETE</p>
             </div>
           </motion.div>
         )}
 
         {state === "done" && (
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="py-12">
-            <div className="w-24 h-24 rounded-full bg-cyan-500 mx-auto flex items-center justify-center mb-8 shadow-2xl shadow-cyan-500/40">
+            <div className="w-24 h-24 rounded-full bg-cyan-500 mx-auto flex items-center justify-center mb-8 shadow-2xl shadow-cyan-500/20">
                <Check className="w-12 h-12 text-white stroke-[4px]" />
             </div>
-            <h2 className="text-4xl font-display font-bold text-white mb-4">Success!</h2>
-            <p className="text-slate-400 text-lg mb-10 leading-relaxed font-medium">Please collect your documents from the tray below.</p>
+            <h2 className="text-4xl font-display font-bold text-slate-900 mb-4">Success!</h2>
+            <p className="text-slate-600 text-lg mb-10 leading-relaxed font-medium">Please collect your documents from the tray below.</p>
             <RippleButton
               onClick={() => { setCode(""); setState("input"); setProgress(0); }}
-              className="px-10 py-4 rounded-2xl bg-slate-900 border border-slate-800 text-white font-bold hover:bg-slate-800 transition-all shadow-xl"
+              className="px-10 py-4 rounded-2xl bg-white border border-slate-200 text-slate-900 font-bold hover:bg-slate-50 transition-all shadow-lg"
             >
               FINISH SESSION
             </RippleButton>
@@ -216,15 +216,15 @@ const KioskPage = () => {
         )}
 
         {state === "error" && (
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="py-12 bg-red-500/5 rounded-[3rem] border border-red-500/20">
-            <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-6">
-              <AlertCircle className="w-12 h-12 text-red-500" />
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="py-12 bg-red-50 rounded-[3rem] border border-red-100 shadow-lg">
+            <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-6">
+              <AlertCircle className="w-12 h-12 text-red-600" />
             </div>
-            <h2 className="text-2xl font-display font-bold text-white mb-2">Oops!</h2>
-            <p className="text-red-400 font-medium mb-8 px-6">{error}</p>
+            <h2 className="text-2xl font-display font-bold text-slate-900 mb-2">Oops!</h2>
+            <p className="text-red-600 font-medium mb-8 px-6">{error}</p>
             <RippleButton
               onClick={() => setState("input")}
-              className="px-8 py-3 rounded-xl bg-red-500 text-white font-bold shadow-lg shadow-red-500/20 hover:bg-red-400 transition-all"
+              className="px-8 py-3 rounded-xl bg-red-600 text-white font-bold shadow-lg shadow-red-600/20 hover:bg-red-500 transition-all"
             >
               TRY AGAIN
             </RippleButton>
@@ -236,14 +236,14 @@ const KioskPage = () => {
         <motion.div 
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }}
-          className="fixed inset-0 z-[20000] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-10 text-center"
+          className="fixed inset-0 z-[20000] bg-white/95 backdrop-blur-xl flex flex-col items-center justify-center p-10 text-center"
         >
-           <div className="w-32 h-32 rounded-full bg-amber-500/10 flex items-center justify-center mb-8 border border-amber-500/20">
+           <div className="w-32 h-32 rounded-full bg-amber-50 flex items-center justify-center mb-8 border border-amber-100">
               <AlertCircle className="w-16 h-16 text-amber-500 animate-pulse" />
            </div>
-           <h2 className="text-4xl font-display font-black text-white mb-4 tracking-tight">Kiosk Offline</h2>
-           <p className="max-w-md text-slate-400 text-lg leading-relaxed">{maintenanceMsg}</p>
-           <div className="mt-12 flex items-center gap-2 text-slate-500 uppercase tracking-widest text-xs font-bold">
+           <h2 className="text-4xl font-display font-black text-slate-900 mb-4 tracking-tight">Kiosk Offline</h2>
+           <p className="max-w-md text-slate-600 text-lg leading-relaxed">{maintenanceMsg}</p>
+           <div className="mt-12 flex items-center gap-2 text-slate-400 uppercase tracking-widest text-xs font-bold">
               <Loader2 className="w-4 h-4 animate-spin" />
               Retrying Hardware Link...
            </div>
