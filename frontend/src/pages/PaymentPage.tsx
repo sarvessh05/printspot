@@ -20,35 +20,109 @@ const Receipt = ({ total, files, otp }: { total: number, files: any[], otp?: str
   <motion.div 
     initial={{ opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
-    className="w-full mb-8 text-left"
+    className="w-full mb-8 text-left font-sans"
   >
-    {otp && (
-      <div className="bg-primary text-white p-6 rounded-3xl text-center mb-6 shadow-xl shadow-primary/20">
-        <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Your Print Code</p>
-        <p className="text-4xl font-black tracking-wider">{otp}</p>
-      </div>
-    )}
-
-    <div className="glass-strong rounded-[2rem] border border-primary/10 overflow-hidden divide-y divide-primary/5">
-      <div className="bg-primary/5 px-6 py-4">
-        <h3 className="text-xs font-black uppercase tracking-widest text-primary/60">Order Breakdown</h3>
-      </div>
-      <div className="px-6 py-4 space-y-4 max-h-[250px] overflow-y-auto no-scrollbar">
-        {files.map((file, i) => (
-          <div key={i} className="flex justify-between items-start gap-4">
-            <div className="flex-grow">
-              <p className="text-sm font-bold text-foreground line-clamp-1 truncate max-w-[200px]">{file.name}</p>
-              <p className="text-[10px] text-muted-foreground font-medium uppercase truncate">
-                {file.pages} Pgs · {file.copies} Qty · {file.mode}
-              </p>
-            </div>
-            <span className="text-sm font-black text-foreground">₹{file.calculatedCost}</span>
+    {/* Receipt Paper Effect Container */}
+    <div className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/40 dark:border-slate-800 overflow-hidden">
+      {/* Decorative Top Accent */}
+      <div className="h-2 w-full bg-primary" />
+      
+      <div className="p-8 pb-10">
+        {/* Header Branding */}
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            <h3 className="text-2xl font-display font-black text-slate-900 dark:text-white leading-none tracking-tighter">Receipt</h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2">PrintSpot Station #01</p>
           </div>
-        ))}
+          <div className="text-right">
+            <span className="inline-block text-[10px] font-black text-primary uppercase tracking-widest bg-primary/5 px-2.5 py-1 rounded-full border border-primary/10">
+              Verified
+            </span>
+            <p className="text-[10px] text-slate-400 mt-2 font-medium">{new Date().toLocaleDateString()}</p>
+          </div>
+        </div>
+
+        {/* OTP Section (If available - usually shown on SuccessPage but here as fallback) */}
+        {otp && (
+          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-3xl p-6 text-center mb-10 border border-slate-100 dark:border-slate-700/50 group">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-2 group-hover:text-primary transition-colors">Your Order Code</p>
+            <p className="text-5xl font-display font-black text-primary tracking-widest drop-shadow-sm">{otp}</p>
+          </div>
+        )}
+
+        {/* Line Items Table */}
+        <div className="space-y-6 mb-10">
+          <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest pb-3 border-b border-slate-50 dark:border-slate-800">
+            <span>Description</span>
+            <span>Total</span>
+          </div>
+          
+          <div className="space-y-5 max-h-[300px] overflow-y-auto no-scrollbar pr-1">
+            {files.map((file, i) => (
+              <div key={i} className="group">
+                <div className="flex justify-between items-start gap-6">
+                  <div className="flex-grow">
+                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 line-clamp-1 group-hover:text-primary transition-colors">{file.name}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase pb-0.5 border-b border-transparent group-hover:border-slate-200 transition-all">
+                        {file.pages} Pgs
+                      </span>
+                      <span className="text-slate-200 dark:text-slate-700">•</span>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase">
+                        {file.copies} Qty
+                      </span>
+                      <span className="text-slate-200 dark:text-slate-700">•</span>
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${file.mode === 'color' ? 'bg-orange-500/10 text-orange-600' : 'bg-slate-100 text-slate-500'}`}>
+                        {file.mode === 'bw' ? 'B&W' : file.mode}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-sm font-black text-slate-900 dark:text-white tabular-nums pt-0.5">₹{file.calculatedCost}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Calculation Summary */}
+        <div className="space-y-4 pt-8 border-t-2 border-dashed border-slate-100 dark:border-slate-800 relative">
+           {/* Decorative cutout circles at ends of dashed line */}
+           <div className="absolute -left-[42px] top-[-10px] w-5 h-5 bg-background rounded-full dark:bg-slate-950" />
+           <div className="absolute -right-[42px] top-[-10px] w-5 h-5 bg-background rounded-full dark:bg-slate-950" />
+
+           <div className="flex justify-between items-center text-[11px] font-bold text-slate-500">
+             <span className="uppercase tracking-widest opacity-60">Subtotal</span>
+             <span className="tabular-nums">₹{total}</span>
+           </div>
+           <div className="flex justify-between items-center text-[11px] font-bold text-slate-500">
+             <span className="uppercase tracking-widest opacity-60">Tax (GST Inclusive)</span>
+             <span className="tabular-nums">₹0.00</span>
+           </div>
+           
+           <div className="flex justify-between items-end pt-4">
+             <div>
+               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Total Amount</span>
+               <div className="text-4xl font-display font-black text-slate-900 dark:text-white mt-1 leading-none tracking-tighter">
+                 <span className="text-xl font-bold text-primary mr-1">₹</span>
+                 {total}
+               </div>
+             </div>
+             <div className="pb-1">
+                <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Ink on Paper</span>
+             </div>
+           </div>
+        </div>
       </div>
-      <div className="bg-primary/5 px-6 py-5 flex justify-between items-center">
-        <span className="text-sm font-bold text-muted-foreground">Grand Total</span>
-        <span className="text-2xl font-black text-primary">₹{total}</span>
+      
+      {/* Footer / Trust Branding */}
+      <div className="bg-slate-50 dark:bg-slate-800/30 px-8 py-5 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
+         <div className="flex items-center gap-2">
+           <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+             <Check className="w-3 h-3 text-white stroke-[4px]" />
+           </div>
+           <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Payment Secured</span>
+         </div>
+         <p className="text-[9px] font-black text-slate-400 italic">No File Retention</p>
       </div>
     </div>
   </motion.div>
