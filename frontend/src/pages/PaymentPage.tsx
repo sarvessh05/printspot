@@ -157,6 +157,17 @@ const PaymentPage = () => {
             const data = await batchResponse.json();
             if (!batchResponse.ok) throw new Error(data.detail || "Verification failed");
 
+            // Save to local history for 36h persistence
+            const savedOtps = JSON.parse(localStorage.getItem('saved_print_otps') || '[]');
+            const newOtpEntry = {
+              otp: data.otp,
+              timestamp: Date.now(),
+              date: new Date().toLocaleString(),
+              fileName: files[0]?.name || "Print Job",
+              count: files.length
+            };
+            localStorage.setItem('saved_print_otps', JSON.stringify([newOtpEntry, ...savedOtps]));
+
             navigate("/success", { state: { otp: data.otp } });
 
           } catch (verifyErr: any) {

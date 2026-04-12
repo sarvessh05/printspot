@@ -65,8 +65,20 @@ const UploadPage = () => {
       .then(data => setPricing(data))
       .catch(err => console.log("Pricing fetch error", err));
     
-    const otps = JSON.parse(localStorage.getItem('saved_print_otps') || '[]');
-    setRecentOtps(otps);
+    // Filter OTPs older than 36 hours
+    const now = Date.now();
+    const expiry = 36 * 60 * 60 * 1000;
+    const allSaved = JSON.parse(localStorage.getItem('saved_print_otps') || '[]');
+    const freshOtps = allSaved.filter((item: any) => {
+      const timestamp = item.timestamp || 0;
+      return (now - timestamp) < expiry;
+    });
+    
+    if (freshOtps.length !== allSaved.length) {
+      localStorage.setItem('saved_print_otps', JSON.stringify(freshOtps));
+    }
+    
+    setRecentOtps(freshOtps);
   }, []);
 
   const handleFiles = useCallback(async (fileList: FileList) => {
@@ -155,24 +167,6 @@ const UploadPage = () => {
   return (
     <PageTransition className="min-h-screen gradient-mesh relative overflow-hidden">
       {/* Floating background shapes */}
-      {floatingShapes.map((shape, i) => (
-        <motion.div
-          key={i}
-          className="absolute rounded-full opacity-[0.04] bg-primary pointer-events-none"
-          style={{ left: shape.x, top: shape.y, width: shape.size, height: shape.size }}
-          animate={{
-            y: [0, -20, 0],
-            x: [0, 10, 0],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            duration: shape.duration,
-            repeat: Infinity,
-            delay: shape.delay,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
 
       <div className="max-w-4xl mx-auto px-6 py-12 relative z-10">
         <button
@@ -228,7 +222,7 @@ const UploadPage = () => {
             const input = document.createElement("input");
             input.type = "file";
             input.multiple = true;
-            input.accept = ".pdf,.docx,.doc,.png,.jpg,.jpeg";
+            input.accept = ".pdf,.docx,.doc,.png,.jpg,.jpeg,.heic,.heif";
             input.onchange = (e) => {
               const target = e.target as HTMLInputElement;
               if (target.files) handleFiles(target.files);

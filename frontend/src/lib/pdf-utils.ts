@@ -1,4 +1,5 @@
 import { PDFDocument } from 'pdf-lib';
+import heic2any from 'heic2any';
 
 /**
  * Rapidly counts pages in a PDF file by scanning metadata chunks.
@@ -66,16 +67,36 @@ export const parsePdfFully = async (doc: Blob): Promise<number> => {
  */
 export const convertImageToPdf = async (file: File): Promise<File> => {
   try {
+    let sourceFile: File | Blob = file;
+    const isHeic = file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic' || file.type === 'image/heif';
+
+    // 1. Convert HEIC to JPEG if needed
+    if (isHeic) {
+      try {
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.8
+        });
+        sourceFile = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+      } catch (err) {
+        console.error("HEIC conversion failed:", err);
+      }
+    }
+
     const pdfDoc = await PDFDocument.create();
-    const imageBytes = await file.arrayBuffer();
+    const imageBytes = await sourceFile.arrayBuffer();
     let image;
     
-    if (file.type === 'image/jpeg' || file.type === 'image/jpg') {
-      image = await pdfDoc.embedJpg(imageBytes);
-    } else if (file.type === 'image/png') {
+    // Check type or extension
+    const type = sourceFile.type;
+    const isPng = type === 'image/png';
+    
+    if (isPng) {
       image = await pdfDoc.embedPng(imageBytes);
     } else {
-      throw new Error("Unsupported image format");
+      // Default to JPG for others (including converted HEIC)
+      image = await pdfDoc.embedJpg(imageBytes);
     }
 
     const a4Width = 595.28; // A4 dimensions in points
@@ -101,3 +122,4 @@ export const convertImageToPdf = async (file: File): Promise<File> => {
     throw err;
   }
 };
+

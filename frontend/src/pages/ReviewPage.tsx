@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { PageTransition } from "@/components/PageTransition";
 import { GlowButton } from "@/components/GlowButton";
 import { AnimatedCounter } from "@/components/AnimatedCounter";
-import { useState, useMemo, useEffect, useRef } from "react";
-import { ArrowLeft, FileText, Minus, Plus, CreditCard, Layers, Palette, Copy as CopyIcon, ScanText, Loader2 } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { ArrowLeft, FileText, ChevronLeft, ChevronRight, Edit2, ShieldCheck, Palette, Copy as CopyIcon, ScanText, Loader2, Minus, Plus, Layers } from "lucide-react";
 import * as pdfjs from 'pdfjs-dist';
 
 // Robust worker configuration for Vite
@@ -27,7 +27,7 @@ interface UploadedFile {
   paperSize: "a4" | "letter";
 }
 
-const PDFThumbnail = ({ file }: { file: File }) => {
+const PDFThumbnail = ({ file, onPageCount }: { file: File, onPageCount?: (p: number) => void }) => {
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -39,7 +39,6 @@ const PDFThumbnail = ({ file }: { file: File }) => {
     const generateThumbnail = async () => {
       try {
         if (!file || !(file instanceof File)) {
-          console.error("Invalid file object", file);
           setError(true);
           setLoading(false);
           return;
@@ -51,14 +50,8 @@ const PDFThumbnail = ({ file }: { file: File }) => {
           if (isMounted) {
             setThumbnail(mainUrl);
             setLoading(false);
+            if (onPageCount) onPageCount(1);
           }
-          return;
-        }
-
-        // Handle PDFs
-        const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-        if (!isPdf) {
-          if (isMounted) setLoading(false);
           return;
         }
 
@@ -72,6 +65,7 @@ const PDFThumbnail = ({ file }: { file: File }) => {
         
         const pdf = await loadingTask.promise;
         const page = await pdf.getPage(1);
+        if (onPageCount) onPageCount(pdf.numPages);
         
         const viewport = page.getViewport({ scale: 1.0 });
         const canvas = document.createElement('canvas');
@@ -109,11 +103,10 @@ const PDFThumbnail = ({ file }: { file: File }) => {
   }, [file]);
 
   return (
-    <div className="w-full aspect-[3/4] bg-white dark:bg-slate-900 rounded-2xl overflow-hidden flex items-center justify-center relative border border-slate-200 dark:border-slate-800 shadow-xl group-hover:scale-[1.05] transition-all duration-500 ring-1 ring-slate-900/5">
+    <div className="w-full aspect-[4/5] bg-white dark:bg-slate-900 rounded-[2rem] overflow-hidden flex items-center justify-center relative shadow-sm">
       {loading ? (
         <div className="flex flex-col items-center gap-2">
-          <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
-          <span className="text-[8px] font-black text-slate-400 animate-pulse tracking-tighter">GENERATING...</span>
+          <Loader2 className="w-6 h-6 text-primary animate-spin" />
         </div>
       ) : thumbnail ? (
         <motion.img 
@@ -126,36 +119,37 @@ const PDFThumbnail = ({ file }: { file: File }) => {
       ) : (
         <div className="flex flex-col items-center gap-2 text-slate-300 dark:text-slate-700">
           <FileText className="w-10 h-10 opacity-30" />
-          <span className="text-[8px] font-black uppercase tracking-widest">{error ? 'No Preview' : 'PDF File'}</span>
         </div>
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
     </div>
   );
 };
 
-const SlidingToggle = ({ options, value, onChange, id }: { options: string[], value: string, onChange: (v: any) => void, id: string }) => (
-  <div className="bg-slate-100 dark:bg-slate-800/50 rounded-xl p-1 flex relative gap-1 border border-slate-200 dark:border-slate-700 w-full">
-    {options.map((opt) => (
-      <button
-        key={opt}
-        onClick={() => onChange(opt.toLowerCase().replace('&', '').replace(' ', ''))}
-        className={`relative z-10 flex-1 py-2 text-xs font-bold transition-colors duration-300 ${
-          (value === opt.toLowerCase().replace('&', '').replace(' ', ''))
-            ? "text-white" 
-            : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-        }`}
-      >
-        <span className="relative z-10">{opt}</span>
-        {value === opt.toLowerCase().replace('&', '').replace(' ', '') && (
-          <motion.div
-            layoutId={`toggle-bg-${id}`}
-            className="absolute inset-0 bg-blue-600 rounded-lg shadow-lg shadow-blue-500/20"
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          />
-        )}
-      </button>
-    ))}
+const SlidingToggle = ({ options, value, onChange, id, pricing }: { options: {label: string, value: string}[], value: string, onChange: (v: any) => void, id: string, pricing: any }) => (
+  <div className="bg-slate-100 dark:bg-slate-800/50 rounded-xl p-1 flex relative gap-1 w-full">
+    {options.map((opt) => {
+      const isSelected = value === opt.value;
+      const priceLabel = opt.value === 'bw' ? `(₹${pricing.bw})` : opt.value === 'color' ? `(₹${pricing.color})` : '';
+      
+      return (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`relative z-10 flex-1 py-2.5 text-[10px] font-black transition-colors duration-300 uppercase tracking-wider ${
+            isSelected ? "text-white" : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <span className="relative z-10">{opt.label} {priceLabel}</span>
+          {isSelected && (
+            <motion.div
+              layoutId={`toggle-bg-${id}`}
+              className="absolute inset-0 bg-primary rounded-lg shadow-lg shadow-primary/20"
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            />
+          )}
+        </button>
+      );
+    })}
   </div>
 );
 
@@ -171,17 +165,18 @@ const ReviewPage = () => {
     colorPagesString: f.colorPagesString || "",
     paperSize: f.paperSize || "a4"
   })));
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    // Sync pricing with backend
     const backendUrl = import.meta.env.VITE_EC2_IP || 'http://localhost:8080';
     fetch(`${backendUrl}/api/settings/pricing`)
       .then(res => res.json())
-      .then(data => {
-        if (data && data.bw) setPricing(data);
-      })
+      .then(data => { if (data && data.bw) setPricing(data); })
       .catch(err => console.error("Pricing sync error", err));
   }, []);
+
+  const currentFile = files[activeIndex];
 
   const updateFileSetting = (id: string, key: keyof UploadedFile, value: any) => {
     setFiles(prev => prev.map(f => {
@@ -201,7 +196,6 @@ const ReviewPage = () => {
     if (file.printRange === 'all') return totalPages;
     if (file.printRange === 'odd') return Math.ceil(totalPages / 2);
     if (file.printRange === 'even') return Math.floor(totalPages / 2);
-    
     if (file.printRange === 'custom' && file.customRangeString.trim()) {
       try {
         let pagesSet = new Set<number>();
@@ -220,9 +214,7 @@ const ReviewPage = () => {
           }
         });
         return pagesSet.size > 0 ? pagesSet.size : totalPages;
-      } catch (e) {
-        return totalPages;
-      }
+      } catch (e) { return totalPages; }
     }
     return totalPages;
   };
@@ -241,7 +233,6 @@ const ReviewPage = () => {
         ? (Math.floor(pages / 2) * Math.ceil(pricing.color * 1.8) + (pages % 2) * pricing.color) 
         : pages * pricing.color;
     } else if (file.mode === 'mixed') {
-      // Mixed mode: Parse color pages, calculate color vs bw
       try {
         let colorPageCount = 0;
         if (file.colorPagesString.trim()) {
@@ -250,9 +241,7 @@ const ReviewPage = () => {
           parts.forEach(part => {
             if (part.includes('-')) {
               let [start, end] = part.split('-').map(num => parseInt(num.trim()));
-              if (!isNaN(start) && !isNaN(end)) {
-                 for (let i = start; i <= end; i++) pagesSet.add(i);
-              }
+              if (!isNaN(start) && !isNaN(end)) for (let i = start; i <= end; i++) pagesSet.add(i);
             } else {
               const num = parseInt(part.trim());
               if (!isNaN(num)) pagesSet.add(num);
@@ -262,232 +251,176 @@ const ReviewPage = () => {
         }
         const bwPageCount = Math.max(0, pages - colorPageCount);
         basePrice = (colorPageCount * pricing.color) + (bwPageCount * pricing.bw);
-      } catch (e) {
-        basePrice = pages * pricing.bw; 
-      }
+      } catch (e) { basePrice = pages * pricing.bw; }
     }
     return basePrice * copies;
   };
 
   const grandTotal = useMemo(() => files.reduce((sum, f) => sum + calculateFileCost(f), 0), [files]);
-  const totalSheets = useMemo(() => files.reduce((sum, f) => sum + (f.isTwoSided ? Math.ceil(f.pages / 2) : f.pages), 0), [files]);
 
   return (
-    <PageTransition className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
-      {/* Dynamic Header */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 px-6 py-4">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <button 
-            onClick={() => navigate("/upload")} 
-            className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors group"
-          >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> 
-            Back
+    <PageTransition className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col font-sans">
+      {/* Redesigned Document Preview Section */}
+      <div className="flex-1 flex flex-col p-6 pb-0 max-w-lg mx-auto w-full">
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={() => navigate("/upload")} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-foreground">
+            <ArrowLeft className="w-5 h-5" />
           </button>
-          <div className="text-center">
-            <h1 className="text-lg font-bold text-slate-900 dark:text-white">Print Settings</h1>
-            <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest">Configuration</p>
-          </div>
+          <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Order Preview</span>
           <div className="w-10" />
         </div>
-      </div>
 
-       <div className="max-w-6xl mx-auto px-6 py-8 w-full flex-grow pb-48 overflow-hidden">
-        <div className={`flex overflow-x-auto gap-8 pb-12 snap-x snap-mandatory no-scrollbar px-[calc(50%-170px)] md:px-[calc(50%-250px)] h-full items-start ${files.length === 1 ? 'justify-center' : ''}`}>
-          {files.map((file, idx) => (
-            <motion.div
-              key={file.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              whileHover={{ y: -5 }}
-              className="min-w-[320px] md:min-w-[500px] snap-center flex-shrink-0 bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800 overflow-hidden group transition-all duration-500"
-            >
-              {/* Preview & File Info Header */}
-              <div className="p-6 md:p-8 pb-0">
-                <div className="flex gap-4 md:gap-6 items-start">
-                  {/* PDF Preview */}
-                  <div className="w-24 md:w-32 flex-shrink-0">
-                    <PDFThumbnail file={file.fileObj} />
-                  </div>
-                  
-                  <div className="flex-grow pt-2">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="text-[9px] md:text-[10px] font-black text-blue-600 uppercase tracking-widest">Doc #{idx + 1}</div>
-                      <div className="text-[9px] md:text-[10px] font-black text-slate-300 dark:text-slate-700 px-2 py-0.5 border border-slate-100 dark:border-slate-800 rounded-full uppercase">
-                        {file.pages} Pgs
-                      </div>
-                    </div>
-                    <h3 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-200 line-clamp-1 md:line-clamp-2 leading-tight mb-2 tracking-tight">{file.name}</h3>
-                    <div className="flex items-center gap-2">
-                       <span className="text-xl md:text-2xl font-black text-slate-900 dark:text-white">₹{calculateFileCost(file)}</span>
-                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md">
-                        GST INCL.
-                       </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+        <div className="relative group mb-6">
+          <PDFThumbnail file={currentFile.fileObj} />
+          
+          {/* Navigation Arrows */}
+          {files.length > 1 && (
+            <>
+              <button 
+                onClick={() => setActiveIndex(prev => Math.max(0, prev - 1))}
+                disabled={activeIndex === 0}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center text-slate-600 disabled:opacity-0 transition-all active:scale-90"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button 
+                onClick={() => setActiveIndex(prev => Math.min(files.length - 1, prev + 1))}
+                disabled={activeIndex === files.length - 1}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center text-slate-600 disabled:opacity-0 transition-all active:scale-90"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </>
+          )}
 
-              {/* Settings Grid */}
-              <div className="p-6 md:p-8 space-y-6 md:y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-                  {/* Color Mode */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                       <Palette className="w-3 h-3 text-blue-500" /> Color Choice
-                    </label>
-                    <SlidingToggle 
-                      id={`mode-${file.id}`}
-                      options={["B&W", "Color", "Mixed"]} 
-                      value={file.mode} 
-                      onChange={(v) => updateFileSetting(file.id, 'mode', v)} 
-                    />
-                    <AnimatePresence>
-                      {file.mode === 'mixed' && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="pt-2"
-                        >
-                          <div className="flex flex-col gap-2">
-                            <input 
-                              type="text"
-                              placeholder="Color pages (e.g. 1, 3-5)"
-                              value={file.colorPagesString}
-                              onChange={(e) => updateFileSetting(file.id, 'colorPagesString', e.target.value)}
-                              className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl py-2 px-3 text-[10px] font-bold focus:ring-1 focus:ring-blue-500 outline-none transition-all"
-                            />
-                            <p className="text-[8px] font-extrabold text-red-500 flex items-center gap-1 animate-pulse leading-none px-1">
-                              <span className="w-1 h-1 rounded-full bg-red-500" />
-                              NOTE: REST PAGES WILL BE B&W
-                            </p>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
+          {/* Page Pill */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-5 py-2 rounded-full text-xs font-black tracking-wider shadow-xl shadow-blue-500/20">
+            Page {activeIndex + 1} of {files.length}
+          </div>
+        </div>
 
-                  {/* Copies */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                       <CopyIcon className="w-3 h-3 text-blue-500" /> Quantity
-                    </label>
-                    <div className="bg-slate-100 dark:bg-slate-800/50 rounded-xl p-1 flex items-center justify-between border border-slate-200 dark:border-slate-700 h-[42px]">
-                      <button 
-                        onClick={() => updateFileSetting(file.id, 'copies', Math.max(1, file.copies - 1))}
-                        className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:bg-white dark:hover:bg-slate-700 transition-all hover:text-blue-600"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="text-sm font-black text-slate-800 dark:text-white tabular-nums">{file.copies}</span>
-                      <button 
-                        onClick={() => updateFileSetting(file.id, 'copies', file.copies + 1)}
-                        className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:bg-white dark:hover:bg-slate-700 transition-all hover:text-blue-600"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+        {/* Order Details Card */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col gap-4 relative">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Order Details</h2>
+            <button onClick={() => setIsEditing(!isEditing)} className="w-8 h-8 rounded-full border border-blue-500/20 flex items-center justify-center text-blue-500">
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-slate-800 truncate max-w-[200px]">{currentFile.name}</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                {currentFile.pages} Pages • {currentFile.mode === 'bw' ? 'B/W' : currentFile.mode === 'color' ? 'Color' : 'Mixed'}
+              </p>
+            </div>
+          </div>
+
+          <div className="h-[1px] bg-slate-100 w-full" />
+
+          <div className="grid grid-cols-3 gap-2 text-center pb-2">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Copies</p>
+              <p className="text-sm font-black text-slate-800">{currentFile.copies}</p>
+            </div>
+            <div className="border-x border-slate-50">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Sides</p>
+              <p className="text-sm font-black text-slate-800">{currentFile.isTwoSided ? 'Double' : 'Single'}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Bill</p>
+              <p className="text-sm font-black text-blue-500">₹{calculateFileCost(currentFile)}</p>
+            </div>
+          </div>
+
+          {/* Expanded Edit Settings */}
+          <AnimatePresence>
+            {isEditing && (
+              <motion.div 
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden space-y-4 pt-4 border-t border-slate-50"
+              >
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-1.5">
+                    <Palette className="w-3 h-3 text-blue-500" /> Mode Choice
+                  </label>
+                  <SlidingToggle 
+                    id={`mode-${currentFile.id}`}
+                    pricing={pricing}
+                    options={[
+                      {label: "B&W", value: "bw"}, 
+                      {label: "Color", value: "color"}, 
+                      {label: "Mixed", value: "mixed"}
+                    ]} 
+                    value={currentFile.mode} 
+                    onChange={(v) => updateFileSetting(currentFile.id, 'mode', v)} 
+                  />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-                   {/* Two Sided */}
-                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                       <Layers className="w-3 h-3 text-blue-500" /> Paper Usage
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-1.5">
+                      <CopyIcon className="w-3 h-3 text-blue-500" /> Quantity
+                    </label>
+                    <div className="bg-slate-100 rounded-xl p-1 flex items-center justify-between h-[36px]">
+                      <button onClick={() => updateFileSetting(currentFile.id, 'copies', Math.max(1, currentFile.copies - 1))} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400"><Minus className="w-4 h-4" /></button>
+                      <span className="text-xs font-black text-slate-800">{currentFile.copies}</span>
+                      <button onClick={() => updateFileSetting(currentFile.id, 'copies', currentFile.copies + 1)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400"><Plus className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-1.5">
+                      <Layers className="w-3 h-3 text-blue-500" /> Siding
                     </label>
                     <button 
-                      onClick={() => updateFileSetting(file.id, 'isTwoSided', !file.isTwoSided)}
-                      className={`w-full flex items-center justify-between px-5 py-2.5 rounded-xl border transition-all duration-300 ${
-                        file.isTwoSided 
-                          ? "bg-blue-600/5 border-blue-600/20 text-blue-600 ring-2 ring-blue-600/10" 
-                          : "bg-slate-100 border-slate-200 dark:bg-slate-800/50 dark:border-slate-700 text-slate-500"
-                      }`}
+                      onClick={() => updateFileSetting(currentFile.id, 'isTwoSided', !currentFile.isTwoSided)}
+                      className={`w-full flex items-center justify-between px-3 h-[36px] rounded-xl border transition-all ${currentFile.isTwoSided ? "bg-blue-50 border-blue-200 text-blue-600" : "bg-slate-100 border-transparent text-slate-500"}`}
                     >
-                      <span className="text-xs font-bold">Double Sided</span>
-                      <div className={`w-10 h-5 rounded-full relative transition-colors ${file.isTwoSided ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'}`}>
-                        <motion.div 
-                          animate={{ x: file.isTwoSided ? 22 : 2 }}
-                          className="w-4 h-4 bg-white rounded-full mt-0.5"
-                        />
-                      </div>
+                      <span className="text-[10px] font-bold">Double Sided</span>
                     </button>
-                   </div>
-
-                   {/* Print Range */}
-                   <div className="space-y-3">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                       <ScanText className="w-3 h-3 text-blue-500" /> Page Select
-                    </label>
-                    <div className="flex flex-col gap-2">
-                      <SlidingToggle 
-                        id={`range-${file.id}`}
-                        options={["All", "Custom"]} 
-                        value={file.printRange} 
-                        onChange={(v) => updateFileSetting(file.id, 'printRange', v)} 
-                      />
-                      <AnimatePresence>
-                        {file.printRange === 'custom' && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
-                          >
-                            <input 
-                              type="text"
-                              placeholder="e.g. 1-5, 8, 10-12"
-                              value={file.customRangeString}
-                              onChange={(e) => updateFileSetting(file.id, 'customRangeString', e.target.value)}
-                              className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl py-2.5 px-4 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400"
-                            />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                   </div>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-1.5">
+                    <ScanText className="w-3 h-3 text-blue-500" /> Page Select
+                  </label>
+                  <SlidingToggle 
+                    id={`range-${currentFile.id}`}
+                    pricing={pricing}
+                    options={[{label: "Full Document", value: "all"}, {label: "Custom Range", value: "custom"}]} 
+                    value={currentFile.printRange} 
+                    onChange={(v) => updateFileSetting(currentFile.id, 'printRange', v)} 
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      {/* Modern Fixed Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 p-6">
-        <div className="max-w-xl mx-auto">
-          <motion.div 
-            initial={{ y: 100 }}
-            animate={{ y: 0 }}
-            className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[3rem] p-4 flex items-center justify-between border border-white dark:border-slate-800 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]"
-          >
-            <div className="pl-6 py-2">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Bill</p>
-              <div className="text-3xl font-black text-slate-900 dark:text-white flex items-baseline gap-1">
-                <span className="text-xl font-bold text-blue-600">₹</span>
-                <AnimatedCounter value={grandTotal} />
-              </div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">{files.length} Files · {totalSheets} Sheets</p>
-            </div>
-            
-            <button 
-              onClick={() => {
-                const filesWithCost = files.map(f => ({
-                  ...f,
-                  calculatedCost: calculateFileCost(f)
-                }));
-                navigate("/payment", { state: { total: grandTotal, files: filesWithCost } });
-              }}
-              className="bg-blue-600 hover:bg-blue-500 text-white h-20 px-10 rounded-[2.5rem] font-black text-lg transition-all active:scale-95 flex items-center gap-3 shadow-xl shadow-blue-500/30 group overflow-hidden relative"
-            >
-              <span className="relative z-10">Confirm & Pay</span>
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center relative z-10 group-hover:rotate-12 transition-transform">
-                <CreditCard className="w-5 h-5" />
-              </div>
-            </button>
-          </motion.div>
+      {/* Action Footer */}
+      <div className="p-6 pt-8 pb-10 flex flex-col items-center gap-6">
+        <button 
+          onClick={() => {
+            const filesWithCost = files.map(f => ({ ...f, calculatedCost: calculateFileCost(f) }));
+            navigate("/payment", { state: { total: grandTotal, files: filesWithCost } });
+          }}
+          className="w-full h-16 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-black text-sm flex items-center justify-center gap-3 shadow-xl shadow-blue-500/30 transition-all active:scale-[0.98]"
+        >
+          <CreditCard className="w-5 h-5" />
+          Pay ₹<AnimatedCounter value={grandTotal} /> & Get OTP
+        </button>
+
+        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+          <ShieldCheck className="w-3.5 h-3.5 text-slate-300" />
+          Secure Razorpay Checkout
         </div>
       </div>
     </PageTransition>
