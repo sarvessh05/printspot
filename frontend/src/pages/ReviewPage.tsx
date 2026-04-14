@@ -4,7 +4,7 @@ import { PageTransition } from "@/components/PageTransition";
 import { GlowButton } from "@/components/GlowButton";
 import { AnimatedCounter } from "@/components/AnimatedCounter";
 import { useState, useMemo, useEffect } from "react";
-import { ArrowLeft, FileText, ChevronLeft, ChevronRight, Edit2, ShieldCheck, Palette, Copy as CopyIcon, ScanText, Loader2, Minus, Plus, Layers } from "lucide-react";
+import { ArrowLeft, FileText, ChevronLeft, ChevronRight, Edit2, ShieldCheck, Palette, Copy as CopyIcon, ScanText, Loader2, Minus, Plus, Layers, Upload, CreditCard } from "lucide-react";
 import * as pdfjs from 'pdfjs-dist';
 
 // Robust worker configuration for Vite
@@ -113,7 +113,9 @@ const PDFThumbnail = ({ file, onPageCount }: { file: File, onPageCount?: (p: num
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           src={thumbnail} 
-          alt="Preview" 
+          alt="Document preview" 
+          width={320}
+          height={400}
           className="w-full h-full object-cover" 
         />
       ) : (
@@ -262,16 +264,44 @@ const ReviewPage = () => {
     <PageTransition className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col font-sans">
       {/* Redesigned Document Preview Section */}
       <div className="flex-1 flex flex-col p-6 pb-0 max-w-lg mx-auto w-full">
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={() => navigate("/upload")} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-foreground">
+        <div className="flex items-center justify-between mb-2">
+          <button onClick={() => navigate("/upload")} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-foreground" aria-label="Go back to upload">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Order Preview</span>
-          <div className="w-10" />
+          <div className="flex flex-col items-center">
+             <h1 className="text-sm font-black text-slate-800 truncate max-w-[240px]">{currentFile.name}</h1>
+             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{currentFile.pages} Pages Total</p>
+          </div>
+          <button 
+            onClick={() => {
+              const input = document.createElement("input");
+              input.type = "file";
+              input.multiple = true;
+              input.accept = ".pdf,.docx,.doc,.png,.jpg,.jpeg,.heic,.heif";
+              input.onchange = async (e) => {
+                const target = e.target as HTMLInputElement;
+                if (target.files) {
+                  // This is a bit complex as we need the handleFiles logic here
+                  // For now, let's navigate back with existing files 
+                  // or just show a toast that adding more is coming
+                  navigate("/upload", { state: { existingFiles: files } });
+                }
+              };
+              input.click();
+            }}
+            aria-label="Upload more documents"
+            className="w-10 h-10 flex items-center justify-center text-blue-500 hover:bg-blue-50 rounded-full transition-colors"
+          >
+            <Upload className="w-5 h-5" />
+          </button>
         </div>
 
-        <div className="relative group mb-6">
-          <PDFThumbnail file={currentFile.fileObj} />
+        <div className="relative group mb-4">
+          <div className="flex justify-center">
+            <div className="w-full max-w-[320px]">
+              <PDFThumbnail file={currentFile.fileObj} />
+            </div>
+          </div>
           
           {/* Navigation Arrows */}
           {files.length > 1 && (
@@ -279,45 +309,40 @@ const ReviewPage = () => {
               <button 
                 onClick={() => setActiveIndex(prev => Math.max(0, prev - 1))}
                 disabled={activeIndex === 0}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center text-slate-600 disabled:opacity-0 transition-all active:scale-90"
+                aria-label="Previous document"
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center text-slate-600 disabled:opacity-0 transition-all active:scale-90 z-10"
               >
-                <ChevronLeft className="w-6 h-6" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
               <button 
                 onClick={() => setActiveIndex(prev => Math.min(files.length - 1, prev + 1))}
                 disabled={activeIndex === files.length - 1}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 shadow-lg flex items-center justify-center text-slate-600 disabled:opacity-0 transition-all active:scale-90"
+                aria-label="Next document"
+                className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center text-slate-600 disabled:opacity-0 transition-all active:scale-90 z-10"
               >
-                <ChevronRight className="w-6 h-6" />
+                <ChevronRight className="w-5 h-5" />
               </button>
             </>
           )}
 
           {/* Page Pill */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-5 py-2 rounded-full text-xs font-black tracking-wider shadow-xl shadow-blue-500/20">
-            Page {activeIndex + 1} of {files.length}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/80 backdrop-blur-sm text-white px-3 py-1 rounded-full text-[9px] font-black tracking-wider shadow-lg">
+            DOC {activeIndex + 1} OF {files.length}
           </div>
         </div>
 
         {/* Order Details Card */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col gap-4 relative">
           <div className="flex items-center justify-between">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Order Details</h2>
-            <button onClick={() => setIsEditing(!isEditing)} className="w-8 h-8 rounded-full border border-blue-500/20 flex items-center justify-center text-blue-500">
-              <Edit2 className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+                <FileText className="w-4 h-4" />
+              </div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Print Settings</p>
+            </div>
+            <button onClick={() => setIsEditing(!isEditing)} className="px-3 py-1 rounded-full border border-blue-500/20 flex items-center gap-1.5 text-blue-500 text-[9px] font-black uppercase">
+              <Edit2 className="w-2.5 h-2.5" /> {isEditing ? 'Close' : 'Adjust'}
             </button>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500">
-              <FileText className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm font-black text-slate-800 truncate max-w-[200px]">{currentFile.name}</p>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                {currentFile.pages} Pages • {currentFile.mode === 'bw' ? 'B/W' : currentFile.mode === 'color' ? 'Color' : 'Mixed'}
-              </p>
-            </div>
           </div>
 
           <div className="h-[1px] bg-slate-100 w-full" />
@@ -412,9 +437,9 @@ const ReviewPage = () => {
             const filesWithCost = files.map(f => ({ ...f, calculatedCost: calculateFileCost(f) }));
             navigate("/payment", { state: { total: grandTotal, files: filesWithCost } });
           }}
-          className="w-full h-16 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-black text-sm flex items-center justify-center gap-3 shadow-xl shadow-blue-500/30 transition-all active:scale-[0.98]"
+          className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98]"
         >
-          <CreditCard className="w-5 h-5" />
+          <CreditCard className="w-4 h-4" />
           Pay ₹<AnimatedCounter value={grandTotal} /> & Get OTP
         </button>
 

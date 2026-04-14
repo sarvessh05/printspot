@@ -10,6 +10,7 @@ from routes.order_creation import router as order_creation_router
 from routes.settings import router as settings_router
 from routes.payments import router as payments_router
 from routes.logs_collector import router as logs_router
+from utils.cleanup import start_cleanup_task
 
 # In dev: docs_url="/docs". In prod: None (disabled).
 app = FastAPI(
@@ -21,6 +22,12 @@ app = FastAPI(
 
 # CORS Configuration
 allowed_origins = settings.allowed_origins_list
+
+# Add common local development origins
+dev_origins = ["http://localhost:8080", "http://localhost:5173", "http://localhost:3000"]
+for origin in dev_origins:
+    if origin not in allowed_origins:
+        allowed_origins.append(origin)
 
 # Hardcoded safety fallbacks for production
 prod_domains = ["https://www.theprintspot.in", "https://theprintspot.in"]
@@ -47,6 +54,10 @@ app.include_router(order_creation_router)
 app.include_router(settings_router)
 app.include_router(payments_router)
 app.include_router(logs_router)
+
+@app.on_event("startup")
+async def startup_event():
+    start_cleanup_task()
 
 @app.get("/")
 @app.get("/health")

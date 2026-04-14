@@ -107,7 +107,7 @@ const LandingPage = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4, duration: 0.5 }}
           >
-            <GlowButton size="lg" onClick={() => navigate("/upload")}>
+            <GlowButton size="lg" onClick={() => navigate("/upload")} aria-label="Start Printing: Start your printing process now">
               Start Printing →
             </GlowButton>
           </motion.div>
@@ -115,6 +115,7 @@ const LandingPage = () => {
 
         {/* Features */}
         <section className="max-w-5xl mx-auto px-6 pb-24">
+          <h2 className="sr-only">Why choose PrintSpot</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {features.map((f, i) => (
               <motion.div
@@ -128,7 +129,7 @@ const LandingPage = () => {
                 <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center mb-4 text-primary">
                   <f.icon className="w-6 h-6" />
                 </div>
-                <h3 className="font-display font-semibold text-lg mb-2">{f.title}</h3>
+                <h2 className="font-display font-semibold text-lg mb-2">{f.title}</h2>
                 <p className="text-sm text-muted-foreground">{f.desc}</p>
               </motion.div>
             ))}

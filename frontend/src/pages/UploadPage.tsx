@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { PageTransition } from "@/components/PageTransition";
 import { useState, useCallback, useEffect } from "react";
 import { Upload, FileText, X, ArrowRight, ArrowLeft, Shield, Zap, Lock, Cloud, Clock, Copy } from "lucide-react";
@@ -20,13 +20,7 @@ interface UploadedFile {
   originalPageCount: number;
 }
 
-const floatingShapes = [
-  { x: "10%", y: "20%", size: 80, delay: 0, duration: 6 },
-  { x: "85%", y: "15%", size: 60, delay: 1, duration: 8 },
-  { x: "70%", y: "70%", size: 100, delay: 2, duration: 7 },
-  { x: "15%", y: "75%", size: 50, delay: 0.5, duration: 9 },
-  { x: "50%", y: "10%", size: 40, delay: 1.5, duration: 5 },
-];
+// Removed floating shapes for better mobile performance
 
 const trustFeatures = [
   {
@@ -51,7 +45,8 @@ const trustFeatures = [
 
 const UploadPage = () => {
   const navigate = useNavigate();
-  const [files, setFiles] = useState<UploadedFile[]>([]);
+  const location = useLocation();
+  const [files, setFiles] = useState<UploadedFile[]>(location.state?.existingFiles || []);
   const [isDragging, setIsDragging] = useState(false);
   const [isAbsorbing, setIsAbsorbing] = useState(false);
   const [pricing, setPricing] = useState({ bw: 2, color: 10, double_sided_discount: 0 });
@@ -114,7 +109,7 @@ const UploadPage = () => {
 
       if (f.type === 'application/pdf') {
         pageCount = await countPagesFast(f);
-      } else if (f.type.startsWith('image/')) {
+      } else if (f.type.startsWith('image/') || f.name.toLowerCase().endsWith('.heic') || f.name.toLowerCase().endsWith('.heif')) {
         try {
           finalFile = await convertImageToPdf(f);
           pageCount = 1;
@@ -166,8 +161,6 @@ const UploadPage = () => {
 
   return (
     <PageTransition className="min-h-screen gradient-mesh relative overflow-hidden">
-      {/* Floating background shapes */}
-
       <div className="max-w-4xl mx-auto px-6 py-12 relative z-10">
         <button
           onClick={() => navigate("/")}
@@ -442,10 +435,9 @@ const UploadPage = () => {
           {trustFeatures.map((feature, i) => (
             <motion.div
               key={feature.title}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 + i * 0.15 }}
-              whileHover={{ y: -4, transition: { type: "spring", stiffness: 300 } }}
+              transition={{ delay: 0.6 + i * 0.1 }}
               className="glass-strong rounded-2xl p-6 group cursor-default relative overflow-hidden"
             >
               {/* Subtle gradient overlay on hover */}

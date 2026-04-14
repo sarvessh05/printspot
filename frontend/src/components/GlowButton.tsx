@@ -1,19 +1,18 @@
 import { motion } from "framer-motion";
 import { ReactNode } from "react";
 
-interface GlowButtonProps {
+interface GlowButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
-  onClick?: () => void;
-  className?: string;
   size?: "default" | "lg";
 }
 
-export const GlowButton = ({ children, onClick, className = "", size = "default" }: GlowButtonProps) => {
+export const GlowButton = ({ children, onClick, className = "", size = "default", ...props }: GlowButtonProps) => {
   const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
   
   return (
     <motion.button
       onClick={onClick}
+      {...props}
       className={`relative font-display font-semibold rounded-2xl bg-primary text-primary-foreground overflow-hidden ${
         size === "lg" ? "px-10 py-5 text-lg" : "px-6 py-3 text-sm"
       } ${className}`}

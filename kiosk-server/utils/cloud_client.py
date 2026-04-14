@@ -67,27 +67,65 @@ class CloudClient:
             except:
                 pass
 
+    async def delete_file(self, file_path: str):
+        """
+        Deletes the file from Supabase Storage once printing is confirmed.
+        """
+        target_url = f"{self.supabase_url}/storage/v1/object/pdfs/{file_path}"
+        headers = {
+            "apikey": self.supabase_key,
+            "Authorization": f"Bearer {self.supabase_key}"
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                res = await client.delete(target_url, headers=headers)
+                if res.status_code == 200:
+                    logger.info(f"🗑️ Supabase Storage: File {file_path} deleted successfully.")
+                else:
+                    logger.warning(f"⚠️ Failed to delete {file_path} from Supabase: {res.status_code}")
+        except Exception as e:
+            logger.error(f"💥 Deletion error for {file_path}: {e}")
+
     async def complete_job_stats(self, db_id: str, paper_used: int = 1):
         """
         Signals completion to both Supabase (Database) and EC2 (Analytics Dashboard).
+        Also triggers file deletion from Supabase Storage.
         """
-        # 1. Update Supabase Database
-        target_url = f"{self.supabase_url}/rest/v1/print_orders?id=eq.{db_id}"
+        # 1. Fetch file info to get unique_name for deletion
+        fetch_url = f"{self.supabase_url}/rest/v1/print_orders?id=eq.{db_id}&select=unique_name"
         headers = {
             "apikey": self.supabase_key,
-            "Authorization": f"Bearer {self.supabase_key}",
-            "Content-Type": "application/json"
+            "Authorization": f"Bearer {self.supabase_key}"
         }
+        
+        unique_name = None
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                res = await client.get(fetch_url, headers=headers)
+                data = res.json()
+                if data:
+                    unique_name = data[0].get("unique_name")
+        except:
+            pass
+
+        # 2. Update Supabase Database
+        target_url = f"{self.supabase_url}/rest/v1/print_orders?id=eq.{db_id}"
         payload = {"print_status": "completed", "kiosk_id": self.kiosk_id}
 
         try:
             async with httpx.AsyncClient(timeout=10) as client:
                 await client.patch(target_url, json=payload, headers=headers)
                 logger.info(f"✅ Supabase Order {db_id} marked as completed.")
+                
+                # Immediate cleanup if unique_name is known
+                if unique_name:
+                    await self.delete_file(unique_name)
+
         except Exception as e:
             logger.error(f"💥 Supabase Job Completion Update Fail: {e}")
 
-        # 2. Update EC2 Analytics Dashboard (matching server.js)
+        # 3. Update EC2 Analytics Dashboard
         if settings.ADMIN_BACKEND_URL:
             ec2_url = f"{settings.ADMIN_BACKEND_URL}/api/kiosk/complete"
             ec2_payload = {

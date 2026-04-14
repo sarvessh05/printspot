@@ -68,7 +68,11 @@ export const parsePdfFully = async (doc: Blob): Promise<number> => {
 export const convertImageToPdf = async (file: File): Promise<File> => {
   try {
     let sourceFile: File | Blob = file;
-    const isHeic = file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic' || file.type === 'image/heif';
+    const isHeic = 
+      file.name.toLowerCase().endsWith('.heic') || 
+      file.name.toLowerCase().endsWith('.heif') || 
+      file.type === 'image/heic' || 
+      file.type === 'image/heif';
 
     // 1. Convert HEIC to JPEG if needed
     if (isHeic) {
@@ -78,9 +82,11 @@ export const convertImageToPdf = async (file: File): Promise<File> => {
           toType: 'image/jpeg',
           quality: 0.8
         });
-        sourceFile = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        const finalBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        sourceFile = new File([finalBlob], file.name.replace(/\.(heic|heif)$/i, ".jpg"), { type: 'image/jpeg' });
       } catch (err) {
         console.error("HEIC conversion failed:", err);
+        // Fallback or re-throw
       }
     }
 

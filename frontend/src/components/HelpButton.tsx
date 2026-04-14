@@ -2,8 +2,11 @@ import { Phone, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 
+import { useLocation } from "react-router-dom";
+
 const HelpButton = () => {
   const [isExpanded, setIsExpanded] = useState(true);
+  const location = useLocation();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -12,6 +15,12 @@ const HelpButton = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Hide help button on Review and Payment pages as requested
+  const hiddenRoutes = ["/review", "/payment"];
+  if (hiddenRoutes.includes(location.pathname)) {
+    return null;
+  }
 
   const toggleExpand = (e: React.MouseEvent) => {
     if (!isExpanded) {
@@ -52,9 +61,10 @@ const HelpButton = () => {
                 e.preventDefault();
                 setIsExpanded(false);
               }}
-              className="ml-2 text-muted-foreground hover:text-foreground p-1"
+              aria-label="Minimize help info"
+              className="ml-2 text-muted-foreground hover:text-foreground p-2 min-w-[24px] min-h-[24px] flex items-center justify-center"
             >
-              <span className="text-xs">×</span>
+              <span className="text-sm">×</span>
             </button>
           </motion.a>
         ) : (

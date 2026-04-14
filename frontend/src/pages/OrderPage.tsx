@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { PageTransition } from "@/components/PageTransition";
 import { GlowButton } from "@/components/GlowButton";
 import { AnimatedCounter } from "@/components/AnimatedCounter";
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, memo } from "react";
 import { 
   Upload, FileText, X, ArrowRight, ArrowLeft, Shield, Zap, Lock, 
   Cloud, Plus, Minus, CreditCard, Layers, Palette, 
-  ScanText, Loader2 
+  ScanText, Loader2, Copy as CopyIcon
 } from "lucide-react";
 import { countPagesFast, convertImageToPdf } from "@/lib/pdf-utils";
 import * as pdfjs from 'pdfjs-dist';
@@ -31,16 +31,18 @@ const trustFeatures = [
   { icon: Lock, title: "End-to-End Encrypted", desc: "Military-grade encryption.", gradient: "from-cyan-400 to-primary" },
 ];
 
-const PDFThumbnail = ({ file }: { file: File }) => {
+const PDFThumbnail = memo(({ file }: { file: File }) => {
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
-    let mainUrl: string | null = null;
+    let mainUrl = '';
+
     const generate = async () => {
       try {
+        if (!file) return;
         if (file.type && file.type.startsWith('image/')) {
           mainUrl = URL.createObjectURL(file);
           if (isMounted) { setThumbnail(mainUrl); setLoading(false); }
@@ -77,7 +79,7 @@ const PDFThumbnail = ({ file }: { file: File }) => {
           <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
         </div>
       ) : thumbnail ? (
-        <img loading="lazy" src={thumbnail} alt="Preview" className="w-full h-full object-cover" />
+        <img loading="lazy" src={thumbnail} alt="Document preview" width={176} height={235} className="w-full h-full object-cover" />
       ) : (
         <div className="flex flex-col items-center gap-2 text-slate-300 dark:text-slate-700">
           <FileText className="w-10 h-10 opacity-30" />
@@ -85,7 +87,7 @@ const PDFThumbnail = ({ file }: { file: File }) => {
       )}
     </div>
   );
-};
+});
 
 const SlidingToggle = ({ options, value, onChange, id, isMobile }: { options: string[], value: string, onChange: (v: any) => void, id: string, isMobile: boolean }) => (
   <div className="bg-slate-100 dark:bg-slate-800/50 rounded-xl p-1 flex relative gap-1 border border-slate-200 dark:border-slate-700 w-full">
@@ -263,7 +265,7 @@ const OrderPage = () => {
       ))}
 
       <div className="flex-grow max-w-6xl mx-auto px-6 py-12 w-full z-10">
-        <button onClick={() => navigate("/")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 group">
+        <button onClick={() => navigate("/")} aria-label="Go back to landing page" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 group">
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back
         </button>
 
@@ -340,26 +342,38 @@ const OrderPage = () => {
                    input.multiple = true;
                    input.onchange = (e) => { if ((e.target as any).files) handleFiles((e.target as any).files); };
                    input.click();
-                 }} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-3.5 rounded-2xl font-black text-xs transition-all shadow-xl shadow-blue-500/20 uppercase tracking-widest">
+                 }} 
+                 aria-label="Add more documents"
+                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-3.5 rounded-2xl font-black text-xs transition-all shadow-xl shadow-blue-500/20 uppercase tracking-widest"
+               >
                    <Plus className="w-4 h-4" /> Add
                  </button>
               </div>
 
               <div className={`flex overflow-x-auto gap-8 pb-8 snap-x snap-mandatory no-scrollbar px-4 -mx-4 items-stretch ${files.length === 1 ? 'justify-start md:justify-center' : 'justify-start'}`}>
                 {files.map((file, idx) => (
-                  <div key={file.id} className="min-w-[85vw] md:min-w-[480px] snap-center bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl border border-white dark:border-slate-800 overflow-hidden flex flex-col">
-                    <div className="p-8 pb-0">
-                      <div className="flex gap-6 items-start">
-                        <div className="w-24 md:w-32 flex-shrink-0"><PDFThumbnail file={file.fileObj} /></div>
-                        <div className="flex-grow pt-2 min-w-0">
-                          <div className="flex items-center justify-between mb-2">
-                             <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Doc #{idx+1}</span>
-                             <button onClick={() => setFiles(prev => prev.filter(f => f.id !== file.id))} className="text-slate-300 hover:text-red-500 transition-colors"><X className="w-5 h-5"/></button>
-                          </div>
-                          <h3 className="text-base font-black text-slate-800 dark:text-slate-200 truncate leading-tight mb-2 tracking-tight">{file.name}</h3>
-                          <div className="flex items-center gap-2">
-                             <span className="text-2xl font-black text-slate-900 dark:text-white">₹{calculateFileCost(file)}</span>
-                             <span className="text-[9px] font-bold text-slate-400 p-1 bg-slate-100 rounded">GST INCL.</span>
+                  <div key={file.id} className="min-w-[85vw] md:min-w-[420px] snap-center bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl border border-white dark:border-slate-800 overflow-hidden flex flex-col">
+                    <div className="p-8 pb-4 flex flex-col items-center relative">
+                      {/* Close Button top right */}
+                      <button 
+                        onClick={() => setFiles(prev => prev.filter(f => f.id !== file.id))} 
+                        aria-label="Remove this file"
+                        className="absolute top-6 right-6 text-slate-300 hover:text-red-500 transition-colors"
+                      >
+                        <X className="w-5 h-5"/>
+                      </button>
+
+                      <div className="w-44 md:w-52 mb-8">
+                        <PDFThumbnail file={file.fileObj} />
+                      </div>
+
+                      <div className="text-center w-full">
+                        <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest block mb-2">Doc #{idx+1}</span>
+                        <div className="flex items-center justify-center gap-3 mb-2 flex-wrap px-4">
+                          <h3 className="text-base font-black text-slate-800 dark:text-slate-200 truncate max-w-[180px] tracking-tight">{file.name}</h3>
+                          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-700">
+                            <span className="text-lg font-black text-primary">₹{calculateFileCost(file)}</span>
+                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">incl. Tax</span>
                           </div>
                         </div>
                       </div>
@@ -377,11 +391,11 @@ const OrderPage = () => {
                             )}
                          </div>
                          <div className="space-y-3">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Copy className="w-3 h-3 text-blue-500"/> Quantity</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><CopyIcon className="w-3 h-3 text-blue-500"/> Quantity</label>
                             <div className="bg-slate-100 dark:bg-slate-800/50 rounded-xl p-1 flex items-center justify-between border border-slate-200 dark:border-slate-700 h-[42px]">
-                               <button onClick={() => updateFileSetting(file.id, 'copies', Math.max(1, file.copies-1))} className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 transition-all"><Minus className="w-4 h-4"/></button>
+                               <button onClick={() => updateFileSetting(file.id, 'copies', Math.max(1, file.copies-1))} aria-label="Decrease copies" className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 transition-all"><Minus className="w-4 h-4"/></button>
                                <span className="text-sm font-black text-slate-800 dark:text-white tabular-nums">{file.copies}</span>
-                               <button onClick={() => updateFileSetting(file.id, 'copies', file.copies+1)} className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 transition-all"><Plus className="w-4 h-4"/></button>
+                               <button onClick={() => updateFileSetting(file.id, 'copies', file.copies+1)} aria-label="Increase copies" className="w-10 h-10 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 transition-all"><Plus className="w-4 h-4"/></button>
                             </div>
                          </div>
                       </div>

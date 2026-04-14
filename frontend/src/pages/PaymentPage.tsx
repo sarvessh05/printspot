@@ -297,8 +297,8 @@ const PaymentPage = () => {
             
             <Receipt total={total} files={files} />
 
-            <div className="glass-strong rounded-[2.5rem] p-6 mb-6 border border-primary/10">
-              <GlowButton size="lg" onClick={handlePay} className="w-full h-14">
+            <div className="flex justify-center mb-6">
+              <GlowButton onClick={handlePay} className="w-48 h-12 text-xs">
                 Secure Payment
               </GlowButton>
             </div>

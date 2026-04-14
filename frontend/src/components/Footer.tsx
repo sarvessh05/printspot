@@ -79,10 +79,10 @@ export const Footer = () => {
 
               {/* Right Side: Quick Contact Info */}
               <div className="glass bg-white/50 dark:bg-slate-800/20 rounded-3xl p-8 space-y-6 border border-white/40 shadow-inner">
-                <h4 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Support Hub</h4>
+                <h2 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Support Hub</h2>
                 
                 <div className="space-y-4">
-                  <a href="mailto:support@printspot.com" className="flex items-center gap-4 group">
+                  <a href="mailto:support@printspot.com" className="flex items-center gap-4 group" aria-label="Email support: khodabharwad88@gmail.com">
                     <div className="w-10 h-10 rounded-xl bg-blue-600/10 flex items-center justify-center group-hover:bg-blue-600 transition-all duration-300">
                       <Mail className="w-4 h-4 text-blue-600 group-hover:text-white" />
                     </div>
@@ -92,7 +92,7 @@ export const Footer = () => {
                     </div>
                   </a>
 
-                  <div className="flex items-center gap-4 group">
+                  <div className="flex items-center gap-4 group" aria-label="Regional HQ Pune, Maharashtra, India">
                     <div className="w-10 h-10 rounded-xl bg-purple-600/10 flex items-center justify-center group-hover:bg-purple-600 transition-all duration-300">
                       <Globe className="w-4 h-4 text-purple-600 group-hover:text-white" />
                     </div>
@@ -105,6 +105,7 @@ export const Footer = () => {
 
                 <button 
                   onClick={() => setShowContact(true)}
+                  aria-label="Send a message to support"
                   className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-slate-900/20"
                 >
                   Send a Message
