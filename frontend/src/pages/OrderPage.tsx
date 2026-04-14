@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { PageTransition } from "@/components/PageTransition";
 import { GlowButton } from "@/components/GlowButton";
@@ -386,6 +387,9 @@ const OrderPage = () => {
                             <SlidingToggle id={`mode-${file.id}`} options={["B&W", "Color", "Mixed"]} value={file.mode} onChange={(v) => updateFileSetting(file.id, 'mode', v)} isMobile={isMobile} />
                             {file.mode === 'mixed' && (
                               <div className="pt-2">
+                                <p className="text-[9px] font-bold text-red-500 mb-2 uppercase tracking-tight flex items-center gap-1">
+                                  <Zap className="w-2.5 h-2.5" /> Note: Only the pages you specify below will be in color. All other pages will be B&W.
+                                </p>
                                 <input type="text" placeholder="e.g. 1, 3-5" value={file.colorPagesString} onChange={(e) => updateFileSetting(file.id, 'colorPagesString', e.target.value)} className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl py-2 px-3 text-base md:text-[10px] font-bold outline-none"/>
                               </div>
                             )}
@@ -412,8 +416,19 @@ const OrderPage = () => {
                          </div>
                          <div className="space-y-3">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><ScanText className="w-3 h-3 text-blue-500"/> Pages</label>
-                            <SlidingToggle id={`range-${file.id}`} options={["All", "Custom"]} value={file.printRange} onChange={(v) => updateFileSetting(file.id, 'printRange', v)} isMobile={isMobile} />
-                         </div>
+                             <SlidingToggle id={`range-${file.id}`} options={["All", "Custom"]} value={file.printRange} onChange={(v) => updateFileSetting(file.id, 'printRange', v)} isMobile={isMobile} />
+                             {file.printRange === 'custom' && (
+                               <div className="pt-2">
+                                 <input 
+                                   type="text" 
+                                   placeholder="e.g. 1-5, 8, 11-13" 
+                                   value={file.customRangeString} 
+                                   onChange={(e) => updateFileSetting(file.id, 'customRangeString', e.target.value)} 
+                                   className="w-full bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl py-2 px-3 text-base md:text-[10px] font-bold outline-none"
+                                 />
+                               </div>
+                             )}
+                          </div>
                       </div>
                     </div>
                   </div>
@@ -438,6 +453,13 @@ const OrderPage = () => {
                 </div>
                 <button 
                   onClick={() => {
+                    // Final safety check: Ensure no file exceeds 50MB
+                    const tooLargeFile = files.find(f => f.fileObj.size > 50 * 1024 * 1024);
+                    if (tooLargeFile) {
+                      toast.error(`"${tooLargeFile.name}" exceeds the 50MB limit. Please remove it to proceed.`);
+                      return;
+                    }
+
                     const filesWithCost = files.map(f => ({ ...f, calculatedCost: calculateFileCost(f) }));
                     navigate("/payment", { state: { total: grandTotal, files: filesWithCost } });
                   }}

@@ -78,6 +78,7 @@ const UploadPage = () => {
 
   const handleFiles = useCallback(async (fileList: FileList) => {
     const SESSION_LIMIT = 50 * 1024 * 1024; // 50MB Total Session Limit
+    const INDIVIDUAL_LIMIT = 50 * 1024 * 1024; // 50MB Individual File Limit
     
     if (files.length + fileList.length > 30) {
       toast.error("Maximum 30 documents allowed per session.");
@@ -88,8 +89,16 @@ const UploadPage = () => {
     const processedFiles: UploadedFile[] = [];
     let currentSessionSize = files.reduce((acc, f) => acc + f.size, 0);
     
-    for (const f of Array.from(fileList)) {
-      // 1. Duplicate check (Name & Size)
+    const filesArray = Array.from(fileList);
+    
+    for (const f of filesArray) {
+      // 1. Individual Size Limit check
+      if (f.size > INDIVIDUAL_LIMIT) {
+        toast.error(`"${f.name}" is too large. Skip (Max 50MB).`);
+        continue;
+      }
+
+      // 2. Duplicate check (Name & Size)
       const isDuplicate = files.some(existing => existing.name === f.name && existing.size === f.size) ||
                          processedFiles.some(p => p.name === f.name && p.size === f.size);
       
@@ -98,40 +107,41 @@ const UploadPage = () => {
         continue;
       }
 
-      // 2. Session Size Limit check
+      // 3. Session Size Limit check
       if (currentSessionSize + f.size > SESSION_LIMIT) {
-        toast.error(`"${f.name}" exceeds session capacity. Total limit is 50MB.`);
+        toast.error(`Session limit reached (50MB). Skipping remaining files.`);
         break; // Stop processing further files if limit reached
       }
 
       let finalFile = f;
       let pageCount = 1;
 
-      if (f.type === 'application/pdf') {
-        pageCount = await countPagesFast(f);
-      } else if (f.type.startsWith('image/') || f.name.toLowerCase().endsWith('.heic') || f.name.toLowerCase().endsWith('.heif')) {
-        try {
+      try {
+        if (f.type === 'application/pdf') {
+          pageCount = await countPagesFast(f);
+        } else if (f.type.startsWith('image/') || f.name.toLowerCase().endsWith('.heic') || f.name.toLowerCase().endsWith('.heif')) {
           finalFile = await convertImageToPdf(f);
           pageCount = 1;
-        } catch (err) {
-          console.error("Image processing error", err);
-          continue;
         }
+
+        processedFiles.push({
+          id: Math.random().toString(36).substring(7),
+          name: finalFile.name,
+          size: finalFile.size,
+          pages: pageCount,
+          fileObj: finalFile,
+          mode: "bw",
+          copies: 1,
+          isTwoSided: false,
+          originalPageCount: pageCount
+        });
+
+        currentSessionSize += finalFile.size;
+      } catch (err) {
+        console.error("File processing error", err);
+        toast.error(`Failed to process "${f.name}"`);
+        continue;
       }
-
-      processedFiles.push({
-        id: Math.random().toString(36).substring(7),
-        name: finalFile.name,
-        size: finalFile.size,
-        pages: pageCount,
-        fileObj: finalFile,
-        mode: "bw",
-        copies: 1,
-        isTwoSided: false,
-        originalPageCount: pageCount
-      });
-
-      currentSessionSize += finalFile.size;
     }
 
     if (processedFiles.length > 0) {

@@ -4,6 +4,7 @@ import { PageTransition } from "@/components/PageTransition";
 import { GlowButton } from "@/components/GlowButton";
 import { AnimatedCounter } from "@/components/AnimatedCounter";
 import { useState, useMemo, useEffect } from "react";
+import { toast } from "sonner";
 import { ArrowLeft, FileText, ChevronLeft, ChevronRight, Edit2, ShieldCheck, Palette, Copy as CopyIcon, ScanText, Loader2, Minus, Plus, Layers, Upload, CreditCard } from "lucide-react";
 import * as pdfjs from 'pdfjs-dist';
 
@@ -386,6 +387,24 @@ const ReviewPage = () => {
                     value={currentFile.mode} 
                     onChange={(v) => updateFileSetting(currentFile.id, 'mode', v)} 
                   />
+                  {currentFile.mode === 'mixed' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-2"
+                    >
+                      <p className="text-[8px] font-black text-red-500 mb-1.5 uppercase tracking-tighter flex items-center gap-1">
+                        ⚠️ Only listed pages will be color. Others will be B&W.
+                      </p>
+                      <input 
+                        type="text" 
+                        placeholder="Color pages e.g. 1, 4-6"
+                        value={currentFile.colorPagesString}
+                        onChange={(e) => updateFileSetting(currentFile.id, 'colorPagesString', e.target.value)}
+                        className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 outline-none focus:border-primary transition-colors placeholder:text-slate-300"
+                      />
+                    </motion.div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -423,6 +442,21 @@ const ReviewPage = () => {
                     value={currentFile.printRange} 
                     onChange={(v) => updateFileSetting(currentFile.id, 'printRange', v)} 
                   />
+                  {currentFile.printRange === 'custom' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-2"
+                    >
+                      <input 
+                        type="text" 
+                        placeholder="e.g. 1-5, 8, 11-13"
+                        value={currentFile.customRangeString}
+                        onChange={(e) => updateFileSetting(currentFile.id, 'customRangeString', e.target.value)}
+                        className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 outline-none focus:border-primary transition-colors placeholder:text-slate-300"
+                      />
+                    </motion.div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -434,6 +468,13 @@ const ReviewPage = () => {
       <div className="p-6 pt-8 pb-10 flex flex-col items-center gap-6">
         <button 
           onClick={() => {
+            // Final safety check: Ensure no file exceeds 50MB
+            const tooLargeFile = files.find(f => f.fileObj.size > 50 * 1024 * 1024);
+            if (tooLargeFile) {
+              toast.error(`"${tooLargeFile.name}" exceeds the 50MB limit. Please remove it to proceed.`);
+              return;
+            }
+
             const filesWithCost = files.map(f => ({ ...f, calculatedCost: calculateFileCost(f) }));
             navigate("/payment", { state: { total: grandTotal, files: filesWithCost } });
           }}
