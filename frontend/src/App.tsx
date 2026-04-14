@@ -4,37 +4,47 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AnimatePresence } from "framer-motion";
-import LandingPage from "./pages/LandingPage";
-import OrderPage from "./pages/OrderPage";
-import PaymentPage from "./pages/PaymentPage";
-import SuccessPage from "./pages/SuccessPage";
-import KioskPage from "./pages/KioskPage";
-import AdminDashboard from "./pages/AdminDashboard";
-import AboutUs from "./pages/AboutUs";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import NotFound from "./pages/NotFound";
+import { lazy, Suspense, useEffect } from "react";
 import HelpButton from "./components/HelpButton";
 import { FilesProvider } from "./context/FilesContext";
 
-import { useEffect } from "react";
+// Lazy load pages for better performance
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const OrderPage = lazy(() => import("./pages/OrderPage"));
+const PaymentPage = lazy(() => import("./pages/PaymentPage"));
+const SuccessPage = lazy(() => import("./pages/SuccessPage"));
+const KioskPage = lazy(() => import("./pages/KioskPage"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AboutUs = lazy(() => import("./pages/AboutUs"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
+
+// Loading component for Suspense
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+  </div>
+);
 
 const AnimatedRoutes = () => {
   const location = useLocation();
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/upload" element={<OrderPage />} />
-        <Route path="/payment" element={<PaymentPage />} />
-        <Route path="/success" element={<SuccessPage />} />
-        <Route path="/kiosk" element={<KioskPage />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/about" element={<AboutUs />} />
-        <Route path="/privacy" element={<PrivacyPolicy />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/upload" element={<OrderPage />} />
+          <Route path="/payment" element={<PaymentPage />} />
+          <Route path="/success" element={<SuccessPage />} />
+          <Route path="/kiosk" element={<KioskPage />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </AnimatePresence>
   );
 };
@@ -68,3 +78,4 @@ const App = () => {
 };
 
 export default App;
+

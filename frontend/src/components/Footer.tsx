@@ -26,7 +26,7 @@ export const Footer = () => {
     <>
       <div className="w-full pb-12 px-6">
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+          initial={typeof window !== 'undefined' && window.innerWidth < 768 ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           style={{ transform: "translateZ(0)" }}
@@ -42,11 +42,12 @@ export const Footer = () => {
               {/* Left Side: Branding & Links */}
               <div className="space-y-8">
                 <div>
-                  <img src="/logo.jpg" alt="PrintSpot" className="h-10 w-auto mb-4 opacity-90" />
+                  <img src="/logo.jpg" alt="PrintSpot" width="120" height="40" loading="lazy" className="h-10 w-auto mb-4 opacity-90" />
                   <p className="text-sm text-slate-500 max-w-xs leading-relaxed">
                     Revolutionizing self-service printing for the modern world. Simple, secure, and always available.
                   </p>
                 </div>
+
 
                 <div className="flex flex-wrap gap-6">
                   <button 

@@ -2,25 +2,42 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PrintSpot — Pure Magic Printing</title>
-    <meta name="description" content="Kiosk Terminal for PrintSpot — Seamless, modern, and beautiful printing." />
-    <meta name="author" content="PrintSpot" />
-
     <link rel="icon" type="image/png" href="/logo-bg.png" />
     <link rel="apple-touch-icon" href="/logo-bg.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#3b82f6" />
+    
+    <!-- Apple Specific -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="PrintSpot" />
+    <link rel="apple-touch-icon" href="/logo-bg.png" />
 
-    <meta property="og:title" content="PrintSpot" />
-    <meta property="og:description" content="PrintSpot Kiosk Interface" />
+    
+    <!-- Performance: Preconnect to external origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://checkout.razorpay.com" />
+    
+    <!-- Open Graph / Social -->
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://theprintspot.in/" />
+    <meta property="og:title" content="PrintSpot — Pure Magic Printing" />
+    <meta property="og:description" content="Seamless, secure, and beautiful document printing via our smart kiosks." />
     <meta property="og:image" content="/logo.jpg" />
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#d8e2ff" />
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="PrintSpot" />
+    <meta property="twitter:description" content="Revolutionizing self-service printing for the modern world." />
+    <meta property="twitter:image" content="/logo.jpg" />
   </head>
 
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
   </body>
 </html>
+

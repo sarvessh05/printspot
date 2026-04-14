@@ -67,12 +67,22 @@
 
   body {
     @apply bg-background text-foreground font-body antialiased;
+    /* iOS Safari Fixes */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display;
+  /* Fix for iOS 100vh issue */
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: 100dvh;
   }
-}
+
 
 @layer components {
   .glass {
@@ -139,5 +149,10 @@
     scrollbar-width: none;
   }
 
+  /* Prevent Safari overscroll/bounce effects */
+  html, body {
+    overscroll-behavior: none;
+  }
 }
+
 

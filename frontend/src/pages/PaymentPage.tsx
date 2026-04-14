@@ -18,10 +18,11 @@ declare global {
 
 const Receipt = ({ total, files, otp }: { total: number, files: any[], otp?: string }) => (
   <motion.div 
-    initial={{ opacity: 0, y: 10 }}
+    initial={typeof window !== 'undefined' && window.innerWidth < 768 ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
     animate={{ opacity: 1, y: 0 }}
     className="w-full mb-8 text-left font-sans"
   >
+
     {/* Receipt Paper Effect Container */}
     <div className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-white/40 dark:border-slate-800 overflow-hidden">
       {/* Decorative Top Accent */}
@@ -274,6 +275,9 @@ const PaymentPage = () => {
   };
 
   useEffect(() => {
+    // Preload Razorpay script
+    loadRazorpay();
+
     if (step === "success") {
       const timer = setTimeout(() => {
         navigate("/success", { state: { otp: realOtp } });
@@ -281,6 +285,7 @@ const PaymentPage = () => {
       return () => clearTimeout(timer);
     }
   }, [step, navigate, realOtp]);
+
 
   return (
     <PageTransition className="min-h-screen gradient-mesh flex items-center justify-center py-12">

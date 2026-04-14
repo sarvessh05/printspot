@@ -1,10 +1,21 @@
 import { motion } from "framer-motion";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 export const Particles = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const particles = useMemo(
     () =>
-      Array.from({ length: 30 }, (_, i) => ({
+      Array.from({ length: isMobile ? 0 : 30 }, (_, i) => ({
         id: i,
         x: Math.random() * 100,
         y: Math.random() * 100,
@@ -12,8 +23,10 @@ export const Particles = () => {
         duration: Math.random() * 8 + 6,
         delay: Math.random() * 4,
       })),
-    []
+    [isMobile]
   );
+
+  if (isMobile) return null;
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -43,3 +56,4 @@ export const Particles = () => {
     </div>
   );
 };
+
