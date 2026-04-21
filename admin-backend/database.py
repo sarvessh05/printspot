@@ -3,87 +3,192 @@
 
 # supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
 
-from config import settings
-import os
+# from config import settings
+# import os
 
-# Try to import supabase, fall back to mock
-try:
+# # Try to import supabase, fall back to mock
+# try:
+#     from supabase import create_client, Client
+#     # Only use real Supabase if we have valid URLs (not mock)
+#     if settings.SUPABASE_URL and settings.SUPABASE_URL != "https://mock.supabase.co":
+#         supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+#         print("✅ Connected to real Supabase")
+#     else:
+#         raise Exception("Using mock Supabase")
+# except Exception as e:
+#     print(f"⚠️ Using mock Supabase: {e}")
+    
+#     # Mock Supabase client for local testing
+#     class MockSupabaseClient:
+#         def __init__(self):
+#             print("🔧 Using MOCK Supabase client for local testing")
+        
+#         def table(self, table_name):
+#             return MockTable(table_name)
+        
+#         def from_(self, table_name):
+#             return MockTable(table_name)
+        
+#         def auth(self):
+#             return MockAuth()
+    
+#     class MockTable:
+#         def __init__(self, table_name):
+#             self.table_name = table_name
+        
+#         def select(self, *args):
+#             return self
+        
+#         def insert(self, data):
+#             print(f"📝 MOCK: Insert into {self.table_name}")
+#             return self
+        
+#         def update(self, data):
+#             print(f"📝 MOCK: Update {self.table_name}")
+#             return self
+        
+#         def delete(self):
+#             print(f"📝 MOCK: Delete from {self.table_name}")
+#             return self
+        
+#         def eq(self, column, value):
+#             return self
+        
+#         def execute(self):
+#             return MockResponse()
+    
+#     class MockAuth:
+#         def sign_in_with_password(self, credentials):
+#             return MockSession()
+        
+#         def sign_up(self, credentials):
+#             return MockSession()
+    
+#     class MockSession:
+#         def __init__(self):
+#             self.user = MockUser()
+#             self.session = MockUserSession()
+    
+#     class MockUser:
+#         def __init__(self):
+#             self.id = "mock_user_123"
+#             self.email = "test@example.com"
+    
+#     class MockUserSession:
+#         def __init__(self):
+#             self.access_token = "mock_token_123"
+    
+#     class MockResponse:
+#         def __init__(self):
+#             self.data = []
+#             self.error = None
+    
+#     supabase = MockSupabaseClient()
+#     create_client = lambda url, key: supabase
+#     Client = MockSupabaseClient
+    # print("✅ Mock database initialized for local testing")
+
+
+#prod
+"""
+Database connection - Uses mock ONLY in development (DEBUG=True)
+In production (DEBUG=False), this will FAIL if Supabase is not configured
+"""
+from config import settings
+from supabase import create_client, Client
+
+# Production mode - NO MOCKING ALLOWED
+if not settings.DEBUG:
+    print("🚀 PRODUCTION MODE: Connecting to real Supabase")
     from supabase import create_client, Client
-    # Only use real Supabase if we have valid URLs (not mock)
-    if settings.SUPABASE_URL and settings.SUPABASE_URL != "https://mock.supabase.co":
-        supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
-        print("✅ Connected to real Supabase")
-    else:
-        raise Exception("Using mock Supabase")
-except Exception as e:
-    print(f"⚠️ Using mock Supabase: {e}")
     
-    # Mock Supabase client for local testing
-    class MockSupabaseClient:
-        def __init__(self):
-            print("🔧 Using MOCK Supabase client for local testing")
-        
-        def table(self, table_name):
-            return MockTable(table_name)
-        
-        def from_(self, table_name):
-            return MockTable(table_name)
-        
-        def auth(self):
-            return MockAuth()
+    # Validate credentials exist
+    if not settings.SUPABASE_URL:
+        raise ValueError("❌ PRODUCTION ERROR: SUPABASE_URL is not configured")
+    if not settings.SUPABASE_SERVICE_ROLE_KEY:
+        raise ValueError("❌ PRODUCTION ERROR: SUPABASE_SERVICE_ROLE_KEY is not configured")
     
-    class MockTable:
-        def __init__(self, table_name):
-            self.table_name = table_name
-        
-        def select(self, *args):
-            return self
-        
-        def insert(self, data):
-            print(f"📝 MOCK: Insert into {self.table_name}")
-            return self
-        
-        def update(self, data):
-            print(f"📝 MOCK: Update {self.table_name}")
-            return self
-        
-        def delete(self):
-            print(f"📝 MOCK: Delete from {self.table_name}")
-            return self
-        
-        def eq(self, column, value):
-            return self
-        
-        def execute(self):
-            return MockResponse()
+    # Connect to real Supabase
+    try:
+        supabase: Client = create_client(
+            settings.SUPABASE_URL, 
+            settings.SUPABASE_SERVICE_ROLE_KEY
+        )
+        print("✅ Production Supabase connected successfully")
+    except Exception as e:
+        print(f"❌ PRODUCTION ERROR: Failed to connect to Supabase: {e}")
+        raise
+
+# Development mode - Allow mock
+else:
+    print("🔧 DEVELOPMENT MODE: Using database with mock fallback")
     
-    class MockAuth:
-        def sign_in_with_password(self, credentials):
-            return MockSession()
+    try:
+        from supabase import create_client, Client
+        if settings.SUPABASE_URL and settings.SUPABASE_URL != "https://mock.supabase.co":
+            supabase = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+            print("✅ Connected to real Supabase (development)")
+        else:
+            raise Exception("No valid Supabase URL - using mock")
+    except Exception as e:
+        print(f"⚠️ Using mock Supabase for development: {e}")
         
-        def sign_up(self, credentials):
-            return MockSession()
-    
-    class MockSession:
-        def __init__(self):
-            self.user = MockUser()
-            self.session = MockUserSession()
-    
-    class MockUser:
-        def __init__(self):
-            self.id = "mock_user_123"
-            self.email = "test@example.com"
-    
-    class MockUserSession:
-        def __init__(self):
-            self.access_token = "mock_token_123"
-    
-    class MockResponse:
-        def __init__(self):
-            self.data = []
-            self.error = None
-    
-    supabase = MockSupabaseClient()
-    create_client = lambda url, key: supabase
-    Client = MockSupabaseClient
-    print("✅ Mock database initialized for local testing")
+        # Mock implementation
+        class MockSupabaseClient:
+            def __init__(self):
+                print("🔧 MOCK Supabase - DEVELOPMENT ONLY")
+            def table(self, table_name):
+                return MockTable(table_name)
+            def from_(self, table_name):
+                return MockTable(table_name)
+            def auth(self):
+                return MockAuth()
+        
+        class MockTable:
+            def __init__(self, table_name):
+                self.table_name = table_name
+            def select(self, *args):
+                return self
+            def insert(self, data):
+                print(f"📝 MOCK: Insert into {self.table_name}")
+                return self
+            def update(self, data):
+                print(f"📝 MOCK: Update {self.table_name}")
+                return self
+            def delete(self):
+                print(f"📝 MOCK: Delete from {self.table_name}")
+                return self
+            def eq(self, column, value):
+                return self
+            def execute(self):
+                return MockResponse()
+        
+        class MockAuth:
+            def sign_in_with_password(self, credentials):
+                return MockSession()
+            def sign_up(self, credentials):
+                return MockSession()
+        
+        class MockSession:
+            def __init__(self):
+                self.user = MockUser()
+                self.session = MockUserSession()
+        
+        class MockUser:
+            def __init__(self):
+                self.id = "mock_user_123"
+                self.email = "test@example.com"
+        
+        class MockUserSession:
+            def __init__(self):
+                self.access_token = "mock_token_123"
+        
+        class MockResponse:
+            def __init__(self):
+                self.data = []
+                self.error = None
+        
+        supabase = MockSupabaseClient()
+        create_client = lambda url, key: supabase
+        Client = MockSupabaseClient
+        print("✅ Mock database initialized - DEVELOPMENT ONLY")
