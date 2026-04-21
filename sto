@@ -1,0 +1,10 @@
+cat > stop_all.sh << 'EOF'
+#!/bin/bash
+
+echo "🛑 Stopping all services..."
+pkill -f "uvicorn"
+pkill -f "vite"
+echo "✅ All services stopped"
+EOF
+
+chmod +x stop_all.sh

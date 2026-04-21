@@ -1,4 +1,17 @@
-# Kiosk Server Dependencies
+# # Kiosk Server Dependencies
+# fastapi==0.135.3
+# uvicorn[standard]==0.44.0
+# httpx==0.28.1
+# pydantic==2.12.5
+# pydantic-settings==2.13.1
+# python-dotenv==1.2.2
+# pypdf==6.9.2
+# pywin32==311
+# wmi==1.5.1
+# pysnmp==7.1.23
+
+
+# Core dependencies (all platforms)
 fastapi==0.135.3
 uvicorn[standard]==0.44.0
 httpx==0.28.1
@@ -6,6 +19,12 @@ pydantic==2.12.5
 pydantic-settings==2.13.1
 python-dotenv==1.2.2
 pypdf==6.9.2
-pywin32==311
-wmi==1.5.1
+
+# Cross-platform dependencies
 pysnmp==7.1.23
+
+# Windows-specific (optional, only needed on Windows)
+pywin32==311; sys_platform == 'win32'
+wmi==1.5.1; sys_platform == 'win32'
+
+# macOS/Linux use built-in CUPS/lpr commands (no extra packages needed)
