@@ -1,5 +1,34 @@
 import { PDFDocument } from 'pdf-lib';
 import heic2any from 'heic2any';
+import JSZip from 'jszip';
+
+/**
+ * Extracts the page count from a DOCX file's internal metadata (docProps/app.xml).
+ */
+export const countDocxPages = async (file: File): Promise<number> => {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const appXmlFile = zip.file("docProps/app.xml");
+    
+    if (!appXmlFile) {
+      return 1; // Fallback if metadata is missing
+    }
+    
+    const appXmlText = await appXmlFile.async("text");
+    // Look for <Pages> tag or <ap:Pages> tag depending on namespace
+    const match = appXmlText.match(/<[^>]*Pages>(\d+)<\/[^>]*Pages>/i) || appXmlText.match(/<Pages>(\d+)<\/Pages>/i);
+    
+    if (match && match[1]) {
+      const pages = parseInt(match[1], 10);
+      return pages > 0 ? pages : 1;
+    }
+    return 1;
+  } catch (error) {
+    console.error("Failed to extract pages from DOCX", error);
+    return 1;
+  }
+};
 
 /**
  * Rapidly counts pages in a PDF file by scanning metadata chunks.

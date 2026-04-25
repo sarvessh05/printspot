@@ -1,17 +1,13 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FileText, Loader2 } from 'lucide-react';
-
-// Import pdfjs-dist statically (not dynamically)
 import * as pdfjsLib from 'pdfjs-dist';
+import { renderAsync } from 'docx-preview';
 
-// Set worker source immediately
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
     'pdfjs-dist/build/pdf.worker.min.mjs',
     import.meta.url
 ).toString();
 
-// Fallback worker URL for iOS
 if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.6.205/pdf.worker.min.js';
 }
@@ -25,14 +21,21 @@ export const IOSCompatibleThumbnail = ({ file, onLoad }: IOSCompatibleThumbnailP
     const [thumbnail, setThumbnail] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
+    const docxRef = useRef<HTMLDivElement>(null);
 
+    const isDocx = file.name.toLowerCase().endsWith('.docx') ||
+        file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+
+    // ✅ Effect 1: Handles PDF and Image thumbnails only
     useEffect(() => {
+        if (isDocx) return; // DOCX is handled separately below
+
         let isMounted = true;
         let objectUrl: string | null = null;
 
         const generateThumbnail = async () => {
             try {
-                // For images - works everywhere
+                // For images
                 if (file.type.startsWith('image/')) {
                     objectUrl = URL.createObjectURL(file);
                     if (isMounted) {
@@ -43,7 +46,7 @@ export const IOSCompatibleThumbnail = ({ file, onLoad }: IOSCompatibleThumbnailP
                     return;
                 }
 
-                // For PDFs - simplified approach that works on iOS
+                // For PDFs
                 if (file.type === 'application/pdf') {
                     objectUrl = URL.createObjectURL(file);
 
@@ -57,7 +60,6 @@ export const IOSCompatibleThumbnail = ({ file, onLoad }: IOSCompatibleThumbnailP
                         const pdf = await loadingTask.promise;
                         const page = await pdf.getPage(1);
 
-                        // Scale to fit thumbnail (max 96px)
                         const viewport = page.getViewport({ scale: 1.0 });
                         const scale = Math.min(96 / viewport.width, 1.5);
                         const scaledViewport = page.getViewport({ scale });
@@ -82,15 +84,18 @@ export const IOSCompatibleThumbnail = ({ file, onLoad }: IOSCompatibleThumbnailP
                         }
                     } catch (pdfError) {
                         console.error("PDF rendering error:", pdfError);
-                        // Fallback - just show file icon
-                        setThumbnail(null);
-                        setLoading(false);
+                        if (isMounted) {
+                            setThumbnail(null);
+                            setLoading(false);
+                        }
                     }
                 }
             } catch (err) {
                 console.error("Thumbnail generation error:", err);
-                setError(true);
-                setLoading(false);
+                if (isMounted) {
+                    setError(true);
+                    setLoading(false);
+                }
             } finally {
                 if (objectUrl && !isMounted) {
                     URL.revokeObjectURL(objectUrl);
@@ -103,12 +108,76 @@ export const IOSCompatibleThumbnail = ({ file, onLoad }: IOSCompatibleThumbnailP
         return () => {
             isMounted = false;
         };
-    }, [file]);
+    }, [file, isDocx]);
 
-    if (loading) {
+    // ✅ Effect 2: Handles DOCX rendering AFTER the ref div is mounted in the DOM
+    useEffect(() => {
+        if (!isDocx) return; // Only runs for DOCX files
+
+        let isMounted = true;
+
+        const renderDocx = async () => {
+            // Safety check — ref must be available
+            if (!docxRef.current) {
+                console.warn("docxRef not ready yet");
+                return;
+            }
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+
+                if (isMounted && docxRef.current) {
+                    await renderAsync(arrayBuffer, docxRef.current, undefined, {
+                        className: "docx-thumbnail-render",
+                        inWrapper: false,
+                        ignoreWidth: true,
+                        ignoreHeight: true,
+                    });
+
+                    if (isMounted) setLoading(false);
+                }
+            } catch (err) {
+                console.error("Docx thumbnail error:", err);
+                if (isMounted) {
+                    setError(true);
+                    setLoading(false);
+                }
+            }
+        };
+
+        renderDocx();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [isDocx, file]); // ← Runs after mount when isDocx=true, ref div is already in DOM
+
+    // Loading state for PDF/Image only (DOCX shows its own inline spinner)
+    if (loading && !isDocx) {
         return (
             <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                 <Loader2 className="w-5 h-5 text-primary animate-spin" />
+            </div>
+        );
+    }
+
+    // ✅ DOCX container — always renders so docxRef is attached before Effect 2 runs
+    if (isDocx) {
+        return (
+            <div className="w-12 h-12 rounded-xl bg-white overflow-hidden shadow-md border border-slate-200 relative">
+                {loading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
+                        <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                    </div>
+                )}
+                <div
+                    ref={docxRef}
+                    className="origin-top-left scale-[0.15] w-[320px] h-[450px]"
+                    style={{ pointerEvents: 'none' }}
+                />
+                <div className="absolute bottom-0 right-0 bg-blue-600 px-1 rounded-tl-md">
+                    <span className="text-[6px] font-bold text-white uppercase">Docx</span>
+                </div>
             </div>
         );
     }
@@ -118,14 +187,14 @@ export const IOSCompatibleThumbnail = ({ file, onLoad }: IOSCompatibleThumbnailP
             <img
                 src={thumbnail}
                 alt="Preview"
-                className="w-12 h-12 rounded-xl object-cover shadow-md"
+                className="w-12 h-12 rounded-xl object-cover shadow-md border border-slate-200"
                 loading="lazy"
             />
         );
     }
 
     return (
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-500 to-slate-600 flex items-center justify-center shadow-md">
             <FileText className="w-5 h-5 text-white" />
         </div>
     );

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { PageTransition } from "@/components/PageTransition";
 import { GlowButton } from "@/components/GlowButton";
 import { AnimatedCounter } from "@/components/AnimatedCounter";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, FileText, ChevronLeft, ChevronRight, Edit2, ShieldCheck, Palette, Copy as CopyIcon, ScanText, Loader2, Minus, Plus, Layers, Upload, CreditCard } from "lucide-react";
 import * as pdfjs from 'pdfjs-dist';
@@ -28,12 +28,19 @@ interface UploadedFile {
   paperSize: "a4" | "letter";
 }
 
+import { renderAsync } from 'docx-preview';
+
 const PDFThumbnail = ({ file, onPageCount }: { file: File, onPageCount?: (p: number) => void }) => {
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const docxRef = useRef<HTMLDivElement>(null);
+  const isDocx = file?.name?.toLowerCase().endsWith('.docx') || file?.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
+  // ✅ Effect 1: Handles PDF and Image thumbnails
   useEffect(() => {
+    if (isDocx) return;
+
     let isMounted = true;
     let mainUrl: string | null = null;
 
@@ -101,13 +108,57 @@ const PDFThumbnail = ({ file, onPageCount }: { file: File, onPageCount?: (p: num
       isMounted = false; 
       if (mainUrl) URL.revokeObjectURL(mainUrl);
     };
-  }, [file]);
+  }, [file, isDocx]);
+
+  // ✅ Effect 2: Handles DOCX rendering after ref is mounted
+  useEffect(() => {
+    if (!isDocx || !docxRef.current) return;
+
+    let isMounted = true;
+    const renderDocx = async () => {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        if (isMounted && docxRef.current) {
+          await renderAsync(arrayBuffer, docxRef.current, undefined, {
+            className: "docx-thumbnail-render",
+            inWrapper: false,
+            ignoreWidth: true,
+            ignoreHeight: true,
+          });
+          if (isMounted) setLoading(false);
+          if (onPageCount) onPageCount(1);
+        }
+      } catch (err) {
+        console.error("Docx thumbnail failed:", err);
+        if (isMounted) {
+          setError(true);
+          setLoading(false);
+        }
+      }
+    };
+
+    renderDocx();
+    return () => { isMounted = false; };
+  }, [isDocx, file]);
 
   return (
-    <div className="w-full aspect-[4/5] bg-white dark:bg-slate-900 rounded-[2rem] overflow-hidden flex items-center justify-center relative shadow-sm">
-      {loading ? (
+    <div className="w-full aspect-[4/5] bg-white dark:bg-slate-900 rounded-[2rem] overflow-hidden flex items-center justify-center relative shadow-sm border border-slate-100">
+      {loading && !isDocx ? (
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="w-6 h-6 text-primary animate-spin" />
+        </div>
+      ) : isDocx ? (
+        <div className="w-full h-full relative">
+          {loading && (
+             <div className="absolute inset-0 flex items-center justify-center bg-white z-10">
+               <Loader2 className="w-6 h-6 text-primary animate-spin" />
+             </div>
+          )}
+          <div 
+            ref={docxRef} 
+            className="origin-top-left scale-[0.4] w-[250%] h-[250%]"
+            style={{ pointerEvents: 'none' }}
+          />
         </div>
       ) : thumbnail ? (
         <motion.img 
@@ -122,6 +173,7 @@ const PDFThumbnail = ({ file, onPageCount }: { file: File, onPageCount?: (p: num
       ) : (
         <div className="flex flex-col items-center gap-2 text-slate-300 dark:text-slate-700">
           <FileText className="w-10 h-10 opacity-30" />
+          <p className="text-[10px] font-bold uppercase tracking-widest">No Preview</p>
         </div>
       )}
     </div>

@@ -30,7 +30,7 @@ async def run_36h_cleanup():
                 print(f"🧹 [CLEANUP] Found {len(response.data)} expired orders. Cleaning up storage...")
                 
                 headers = {
-                    "apikey": settings.SUPABASE_ANON_KEY, # Use service role key if available for storage
+                    "apikey": settings.SUPABASE_SERVICE_ROLE_KEY, # Use service role key for storage bypass
                     "Authorization": f"Bearer {settings.SUPABASE_SERVICE_ROLE_KEY}"
                 }
                 

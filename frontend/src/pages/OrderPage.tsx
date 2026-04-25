@@ -128,20 +128,20 @@ const OrderPage = () => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
-    
+
     const backendUrl = import.meta.env.VITE_EC2_IP || 'http://localhost:8080';
     fetch(`${backendUrl}/api/settings/pricing`)
       .then(res => res.json())
       .then(data => setPricing(data))
       .catch(err => console.log("Pricing fetch error", err));
-    
+
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   const handleFiles = useCallback(async (fileList: FileList) => {
     setIsAbsorbing(true);
     const processedFiles: UploadedFile[] = [];
-    
+
     for (const f of Array.from(fileList)) {
       if (files.some(existing => existing.name === f.name && existing.size === f.size)) continue;
 
@@ -478,4 +478,3 @@ const OrderPage = () => {
 };
 
 export default OrderPage;
-

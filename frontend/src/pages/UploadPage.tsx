@@ -1040,7 +1040,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Upload, FileText, X, ArrowRight, ArrowLeft, Shield, Zap, Lock, Cloud, Clock, Copy, Eye } from "lucide-react";
 import { GlowButton } from "@/components/GlowButton";
 import { AnimatedCounter } from "@/components/AnimatedCounter";
-import { countPagesFast, convertImageToPdf } from "@/lib/pdf-utils";
+import { countPagesFast, convertImageToPdf, countDocxPages } from "@/lib/pdf-utils";
 import { toast } from "sonner";
 import { IOSCompatibleThumbnail } from "@/components/IOSCompatibleThumbnail";
 import { IOSPDFViewer } from "@/components/IOSPDFViewer";
@@ -1178,6 +1178,8 @@ const UploadPage = () => {
         } else if (f.type.startsWith('image/') || f.name.toLowerCase().endsWith('.heic') || f.name.toLowerCase().endsWith('.heif')) {
           finalFile = await convertImageToPdf(f);
           pageCount = 1;
+        } else if (f.name.toLowerCase().endsWith('.docx')) {
+          pageCount = await countDocxPages(f);
         } else {
           // For unsupported file types, still allow but show warning
           toast.warning(`"${f.name}" may not preview correctly, but can be printed.`);
