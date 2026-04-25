@@ -4,15 +4,17 @@ import { useNavigate } from "react-router-dom";
 import { PageTransition } from "@/components/PageTransition";
 import { GlowButton } from "@/components/GlowButton";
 import { AnimatedCounter } from "@/components/AnimatedCounter";
-import { useState, useCallback, useEffect, useMemo, memo } from "react";
+import { useState, useCallback, useEffect, useMemo, memo, useRef } from "react";
 import { 
   Upload, FileText, X, ArrowRight, ArrowLeft, Shield, Zap, Lock, 
   Cloud, Plus, Minus, CreditCard, Layers, Palette, 
-  ScanText, Loader2, Copy as CopyIcon
+  ScanText, Loader2, Copy as CopyIcon, Presentation, Table
 } from "lucide-react";
-import { countPagesFast, convertImageToPdf } from "@/lib/pdf-utils";
+import { countPagesFast, convertImageToPdf, countDocxPages, countPptxPages, countXlsxPages, extractOfficeThumbnail } from "@/lib/pdf-utils";
 import * as pdfjs from 'pdfjs-dist';
+import { renderAsync } from 'docx-preview';
 import { useFiles, UploadedFile } from "@/context/FilesContext";
+import { IOSCompatibleThumbnail } from "@/components/IOSCompatibleThumbnail";
 
 // Robust worker configuration for Vite
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
@@ -36,8 +38,30 @@ const PDFThumbnail = memo(({ file }: { file: File }) => {
   const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const docxRef = useRef<HTMLDivElement>(null);
+
+  const name = file.name.toLowerCase();
+  const isDocx = name.endsWith('.docx') || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  const isPptx = name.endsWith('.pptx') || file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+  const isXlsx = name.endsWith('.xlsx') || file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+  // For PPTX and XLSX, try to extract the embedded thumbnail
+  useEffect(() => {
+    if (!isPptx && !isXlsx) return;
+    let isMounted = true;
+    extractOfficeThumbnail(file).then(thumb => {
+      if (isMounted) {
+        setThumbnail(thumb);
+        setLoading(false);
+      }
+    }).catch(() => {
+      if (isMounted) setLoading(false);
+    });
+    return () => { isMounted = false; };
+  }, [file, isPptx, isXlsx]);
 
   useEffect(() => {
+    if (isDocx || isPptx || isXlsx) return;
     let isMounted = true;
     let mainUrl = '';
 
@@ -57,33 +81,85 @@ const PDFThumbnail = memo(({ file }: { file: File }) => {
         });
         const pdf = await loadingTask.promise;
         const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 0.5 }); // Lower scale for thumbnails
+        const viewport = page.getViewport({ scale: 0.8 }); 
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         if (!context) throw new Error("Canvas Error");
         canvas.height = viewport.height;
         canvas.width = viewport.width;
         await page.render({ canvasContext: context, viewport }).promise;
-        if (isMounted) { setThumbnail(canvas.toDataURL('image/jpeg', 0.6)); setLoading(false); }
+        if (isMounted) { setThumbnail(canvas.toDataURL('image/jpeg', 0.8)); setLoading(false); }
       } catch (err) {
         if (isMounted) { setError(true); setLoading(false); }
       }
     };
     generate();
     return () => { isMounted = false; if (mainUrl) URL.revokeObjectURL(mainUrl); };
-  }, [file]);
+  }, [file, isDocx, isPptx, isXlsx]);
+
+  useEffect(() => {
+    if (!isDocx || !docxRef.current) return;
+    let isMounted = true;
+    const renderDocx = async () => {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        if (isMounted && docxRef.current) {
+          await renderAsync(arrayBuffer, docxRef.current, undefined, {
+            className: "docx-render",
+            inWrapper: false,
+            ignoreWidth: true,
+            ignoreHeight: true,
+          });
+          if (isMounted) setLoading(false);
+        }
+      } catch (err) {
+        if (isMounted) { setError(true); setLoading(false); }
+      }
+    };
+    renderDocx();
+    return () => { isMounted = false; };
+  }, [isDocx, file]);
 
   return (
     <div className="w-full aspect-[3/4] bg-white dark:bg-slate-900 rounded-2xl overflow-hidden flex items-center justify-center relative border border-slate-200 dark:border-slate-800 shadow-xl group-hover:scale-[1.05] transition-all duration-500 ring-1 ring-slate-900/5">
-      {loading ? (
+      {isDocx ? (
+        <div className="w-full h-full relative overflow-hidden bg-white flex items-center justify-center p-4">
+           {loading && (
+             <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-30">
+               <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+             </div>
+           )}
+           <div ref={docxRef} className="scale-[0.22] w-[816px] h-[1100px] pointer-events-none flex-shrink-0" />
+           <div className="absolute bottom-0 right-0 bg-blue-600 px-3 py-1.5 rounded-tl-2xl shadow-2xl z-20">
+             <span className="text-[10px] font-black text-white uppercase tracking-widest">Docx</span>
+           </div>
+        </div>
+      ) : isPptx || isXlsx ? (
+        <div className="w-full h-full relative overflow-hidden bg-white flex items-center justify-center p-4">
+          {loading ? (
+             <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-30">
+               <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+             </div>
+          ) : thumbnail ? (
+             <img loading="lazy" src={thumbnail} alt="Document preview" className="w-full h-full object-cover" />
+          ) : (
+             <div className="flex flex-col items-center gap-2 text-slate-300 dark:text-slate-700">
+               {isPptx ? <Presentation className="w-16 h-16 opacity-30 text-orange-500" /> : <Table className="w-16 h-16 opacity-30 text-green-500" />}
+             </div>
+          )}
+          <div className={`absolute bottom-0 right-0 px-3 py-1.5 rounded-tl-2xl shadow-2xl z-20 ${isPptx ? 'bg-orange-600' : 'bg-green-600'}`}>
+            <span className="text-[10px] font-black text-white uppercase tracking-widest">{isPptx ? 'Pptx' : 'Xlsx'}</span>
+          </div>
+        </div>
+      ) : loading ? (
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
         </div>
       ) : thumbnail ? (
-        <img loading="lazy" src={thumbnail} alt="Document preview" width={176} height={235} className="w-full h-full object-cover" />
+        <img loading="lazy" src={thumbnail} alt="Document preview" className="w-full h-full object-cover" />
       ) : (
         <div className="flex flex-col items-center gap-2 text-slate-300 dark:text-slate-700">
-          <FileText className="w-10 h-10 opacity-30" />
+          <FileText className="w-12 h-12 opacity-30" />
         </div>
       )}
     </div>
@@ -150,6 +226,12 @@ const OrderPage = () => {
 
       if (f.type === 'application/pdf') {
         pageCount = await countPagesFast(f);
+      } else if (f.name.toLowerCase().endsWith('.docx') || f.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        pageCount = await countDocxPages(f);
+      } else if (f.name.toLowerCase().endsWith('.pptx') || f.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
+        pageCount = await countPptxPages(f);
+      } else if (f.name.toLowerCase().endsWith('.xlsx') || f.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+        pageCount = await countXlsxPages(f);
       } else if (f.type.startsWith('image/')) {
         try { finalFile = await convertImageToPdf(f); } catch (err) { continue; }
       }

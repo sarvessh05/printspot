@@ -6,18 +6,72 @@ import JSZip from 'jszip';
  * Extracts the page count from a DOCX file's internal metadata (docProps/app.xml).
  */
 export const countDocxPages = async (file: File): Promise<number> => {
+  return countOfficePages(file, /<[^>]*Pages>(\d+)<\/[^>]*Pages>/i, /<Pages>(\d+)<\/Pages>/i);
+};
+
+/**
+ * Extracts slide count from a PPTX file.
+ */
+export const countPptxPages = async (file: File): Promise<number> => {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    
+    // PPTX slides are typically stored as individual XML files in ppt/slides/
+    let slideCount = 0;
+    zip.folder("ppt/slides")?.forEach((relativePath) => {
+      // Look for files like slide1.xml, slide2.xml...
+      if (relativePath.match(/^slide\d+\.xml$/i)) {
+        slideCount++;
+      }
+    });
+    
+    if (slideCount > 0) {
+      return slideCount;
+    }
+    
+    // Fallback to app.xml metadata if folder scanning fails
+    return await countOfficePages(file, /<[^>]*Slides>(\d+)<\/[^>]*Slides>/i, /<Slides>(\d+)<\/Slides>/i);
+  } catch (e) {
+    console.error("Failed to read PPTX slides", e);
+    return 1;
+  }
+};
+
+/**
+ * Extracts sheet count from an XLSX file (each sheet is estimated as 1 page).
+ */
+export const countXlsxPages = async (file: File): Promise<number> => {
+  // XLSX usually stores sheet count in workbook.xml or app.xml, let's try a common tag or default to 1.
+  // Actually, TitlesOfParts size often equals the number of sheets in app.xml
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const workbookXml = zip.file("xl/workbook.xml");
+    if (workbookXml) {
+      const text = await workbookXml.async("text");
+      const match = text.match(/<sheet\s+/gi);
+      if (match && match.length > 0) return match.length;
+    }
+  } catch (e) {
+    console.error("Failed to read XLSX sheets", e);
+  }
+  return 1;
+};
+
+// Internal helper for Office metadata extraction
+const countOfficePages = async (file: File, regex1: RegExp, regex2: RegExp): Promise<number> => {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const zip = await JSZip.loadAsync(arrayBuffer);
     const appXmlFile = zip.file("docProps/app.xml");
     
     if (!appXmlFile) {
-      return 1; // Fallback if metadata is missing
+      return 1;
     }
     
     const appXmlText = await appXmlFile.async("text");
-    // Look for <Pages> tag or <ap:Pages> tag depending on namespace
-    const match = appXmlText.match(/<[^>]*Pages>(\d+)<\/[^>]*Pages>/i) || appXmlText.match(/<Pages>(\d+)<\/Pages>/i);
+    const match = appXmlText.match(regex1) || appXmlText.match(regex2);
     
     if (match && match[1]) {
       const pages = parseInt(match[1], 10);
@@ -25,9 +79,28 @@ export const countDocxPages = async (file: File): Promise<number> => {
     }
     return 1;
   } catch (error) {
-    console.error("Failed to extract pages from DOCX", error);
+    console.error(`Failed to extract pages from ${file.name}`, error);
     return 1;
   }
+};
+
+/**
+ * Extracts the embedded thumbnail from an Office Document (DOCX/PPTX/XLSX) if it exists.
+ * Many Office files contain `docProps/thumbnail.jpeg`.
+ */
+export const extractOfficeThumbnail = async (file: File): Promise<string | null> => {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const zip = await JSZip.loadAsync(arrayBuffer);
+    const thumbnailFile = zip.file("docProps/thumbnail.jpeg") || zip.file("docProps/thumbnail.wmf");
+    if (thumbnailFile) {
+      const blob = await thumbnailFile.async("blob");
+      return URL.createObjectURL(blob);
+    }
+  } catch (e) {
+    // silently fail and return null
+  }
+  return null;
 };
 
 /**

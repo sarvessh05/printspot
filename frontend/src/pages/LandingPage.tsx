@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { PageTransition } from "@/components/PageTransition";
 import { Particles } from "@/components/Particles";
 import { GlowButton } from "@/components/GlowButton";
-import { Zap, Shield, Clock } from "lucide-react";
+import { Zap, Shield, Clock, FileText, Image as ImageIcon, Presentation, Table, File } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { useState, useEffect } from "react";
 
@@ -11,6 +11,14 @@ const features = [
   { icon: Zap, title: "Instant Printing", desc: "Upload and print in under 60 seconds" },
   { icon: Shield, title: "Secure & Private", desc: "Files are deleted after printing" },
   { icon: Clock, title: "24/7 Available", desc: "Print anytime at any kiosk" },
+];
+
+const supportedFormats = [
+  { name: "PDF", icon: File, color: "text-red-500", bg: "bg-red-500/10 dark:bg-red-500/20" },
+  { name: "DOCX", icon: FileText, color: "text-blue-500", bg: "bg-blue-500/10 dark:bg-blue-500/20" },
+  { name: "PPTX", icon: Presentation, color: "text-orange-500", bg: "bg-orange-500/10 dark:bg-orange-500/20" },
+  { name: "XLSX", icon: Table, color: "text-green-500", bg: "bg-green-500/10 dark:bg-green-500/20" },
+  { name: "Images", icon: ImageIcon, color: "text-purple-500", bg: "bg-purple-500/10 dark:bg-purple-500/20" },
 ];
 
 const LandingPage = () => {
@@ -110,6 +118,23 @@ const LandingPage = () => {
             <GlowButton size="lg" onClick={() => navigate("/upload")} aria-label="Start Printing: Start your printing process now">
               Start Printing →
             </GlowButton>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="mt-12 flex flex-col items-center justify-center gap-4 w-full"
+          >
+            <p className="text-[10px] md:text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Seamlessly Supports</p>
+            <div className="flex flex-wrap justify-center gap-3">
+              {supportedFormats.map((format) => (
+                <div key={format.name} className={`flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-2xl ${format.bg} border border-slate-200/50 dark:border-slate-800/50 backdrop-blur-sm shadow-sm transition-transform hover:scale-105 cursor-default`}>
+                  <format.icon className={`w-4 h-4 md:w-4 md:h-4 ${format.color}`} />
+                  <span className={`text-xs md:text-sm font-black tracking-tight ${format.color}`}>{format.name}</span>
+                </div>
+              ))}
+            </div>
           </motion.div>
         </section>
 
