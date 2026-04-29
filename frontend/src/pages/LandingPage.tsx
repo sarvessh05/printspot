@@ -76,7 +76,7 @@ const LandingPage = () => {
         </nav>
 
         {/* Hero */}
-        <section className="flex flex-col items-center justify-center text-center px-6 pt-24 pb-32 max-w-4xl mx-auto">
+        <section className="flex flex-col items-center justify-center text-center px-6 pt-10 pb-12 max-w-4xl mx-auto">
           <motion.div
             variants={fadeInUp}
             initial="initial"
@@ -139,7 +139,7 @@ const LandingPage = () => {
         </section>
 
         {/* Features */}
-        <section className="max-w-5xl mx-auto px-6 pb-24">
+        <section className="max-w-5xl mx-auto px-6 pb-10">
           <h2 className="sr-only">Why choose PrintSpot</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {features.map((f, i) => (

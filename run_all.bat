@@ -38,6 +38,10 @@ if not exist "admin-frontend\node_modules" (
     echo [!] admin-frontend/node_modules missing. Running npm install...
     cd admin-frontend && npm install && cd ..
 )
+if not exist "kiosk-frontend\node_modules" (
+    echo [!] kiosk-frontend/node_modules missing. Running npm install...
+    cd kiosk-frontend && npm install && cd ..
+)
 
 :: 🛡️ 3. CHECK SUMATRA PDF
 echo [*] Checking for SumatraPDF Printer Engine...
@@ -54,12 +58,14 @@ echo ===============================================
 :: Launching in separate windows
 start "Cloud API [8083]" cmd /k "cd admin-backend && %PYTHON_API% -m uvicorn server:app --host 0.0.0.0 --port 8083 --reload"
 start "Hardware Kiosk [5000]" cmd /k "cd kiosk-server && %PYTHON_KIOSK% -m uvicorn server:app --host 0.0.0.0 --port 5000 --reload"
-start "Kiosk UI [8080]" cmd /k "cd frontend && npm run dev -- --port 8080"
+start "Main Website [8080]" cmd /k "cd frontend && npm run dev -- --port 8080"
+start "Kiosk App [Standalone]" cmd /k "cd kiosk-frontend && npm run electron:dev"
 start "Admin Panel [5173]" cmd /k "cd admin-frontend && npm run dev -- --port 5173"
 
 echo =====================================
-echo [*] Kiosk UI:    http://localhost:8080/kiosk
-echo [*] Admin Panel: http://localhost:5173
+echo [*] Main Website:  http://localhost:8080
+echo [*] Kiosk UI:      http://localhost:5174
+echo [*] Admin Panel:   http://localhost:5173
 echo =====================================
 echo SYSTEM READY FOR DEMO! 🚀
 pause

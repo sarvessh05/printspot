@@ -3,23 +3,39 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mail, MessageSquare, Shield, Info, Send, X, Globe, Phone } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 export const Footer = () => {
   const navigate = useNavigate();
   const [showContact, setShowContact] = useState(false);
-  const [formState, setFormState] = useState({ name: "", email: "", message: "" });
+  const [formState, setFormState] = useState({ name: "", email: "", phone: "", message: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
+    
+    try {
+      const { error } = await supabase
+        .from('contact_submissions')
+        .insert([{
+          name: formState.name,
+          email: formState.email,
+          phone: formState.phone || null,
+          message: formState.message
+        }]);
+        
+      if (error) throw error;
+
       toast.success("Message sent! We'll get back to you soon.");
-      setFormState({ name: "", email: "", message: "" });
-      setIsSubmitting(false);
+      setFormState({ name: "", email: "", phone: "", message: "" });
       setShowContact(false);
-    }, 1500);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to send message. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -166,6 +182,16 @@ export const Footer = () => {
                     value={formState.email}
                     onChange={(e) => setFormState({...formState, email: e.target.value})}
                     placeholder="your@email.com" 
+                    className="w-full bg-slate-100 dark:bg-slate-800/50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number (Optional)</label>
+                  <input 
+                    type="tel" 
+                    value={formState.phone}
+                    onChange={(e) => setFormState({...formState, phone: e.target.value})}
+                    placeholder="Your phone number" 
                     className="w-full bg-slate-100 dark:bg-slate-800/50 border-none rounded-2xl py-4 px-6 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                   />
                 </div>

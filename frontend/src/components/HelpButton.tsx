@@ -16,9 +16,9 @@ const HelpButton = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Hide help button on Review and Payment pages as requested
-  const hiddenRoutes = ["/review", "/payment"];
-  if (hiddenRoutes.includes(location.pathname)) {
+  // Show help button only on landing page and final page
+  const allowedRoutes = ["/", "/success"];
+  if (!allowedRoutes.includes(location.pathname)) {
     return null;
   }
 
